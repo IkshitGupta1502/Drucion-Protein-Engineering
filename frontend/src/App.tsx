@@ -14,10 +14,10 @@ const Explorer = lazy(() => import('./views/Explorer').then(m => ({ default: m.E
 type Tab = 'setup' | 'live' | 'benchmark' | 'explorer';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'setup', label: 'Experiment setup' },
-  { id: 'live', label: 'Live optimization' },
-  { id: 'benchmark', label: 'Benchmark' },
-  { id: 'explorer', label: 'Protein explorer' },
+  { id: 'setup', label: 'Get started' },
+  { id: 'live', label: 'My search' },
+  { id: 'benchmark', label: 'Compare approaches' },
+  { id: 'explorer', label: 'My results' },
 ];
 
 export default function App() {
@@ -25,7 +25,7 @@ export default function App() {
     const hash = window.location.hash.slice(1);
     return TABS.some(t => t.id === hash) ? hash as Tab : 'setup';
   });
-  const navigate = (next: Tab) => { window.location.hash = next; setTab(next); };
+  const navigate = (next: Tab) => { window.location.hash = next; setTab(next); window.scrollTo({ top: 0 }); };
   useEffect(() => {
     const sync = () => { const hash = window.location.hash.slice(1); setTab(TABS.some(t => t.id === hash) ? hash as Tab : 'setup'); };
     window.addEventListener('hashchange', sync);
@@ -39,6 +39,10 @@ export default function App() {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [device, setDevice] = useState<string>('');
+  const [engineError, setEngineError] = useState(false);
+  const [restoring, setRestoring] = useState(true);
+  const autoRunRef = useRef(false);
+  const restoreRef = useRef(false);
   const [embedProgress, setEmbedProgress] = useState<{ done: number; total: number } | null>(
     null,
   );
@@ -47,8 +51,8 @@ export default function App() {
   useEffect(() => {
     api
       .health()
-      .then((h) => setDevice(h.device))
-      .catch(() => undefined);
+      .then((h) => { setDevice(h.device); setEngineError(false); })
+      .catch(() => setEngineError(true));
   }, []);
 
   const refreshResults = useCallback((id: string) => {
@@ -66,7 +70,12 @@ export default function App() {
       sourceRef.current = src;
 
       src.addEventListener('snapshot', (e) => {
-        setExperiment(JSON.parse((e as MessageEvent).data));
+        const snapshot: ExperimentState = JSON.parse((e as MessageEvent).data);
+        setExperiment(snapshot);
+        if (snapshot.status === 'done' || snapshot.status === 'error') {
+          refreshResults(id);
+          src.close();
+        }
       });
       src.addEventListener('ready', (e) => {
         setExperiment(JSON.parse((e as MessageEvent).data));
@@ -88,12 +97,15 @@ export default function App() {
       src.addEventListener('finished', (e) => {
         setExperiment(JSON.parse((e as MessageEvent).data));
         refreshResults(id);
+        src.close();
       });
       src.addEventListener('error', (e) => {
         const data = (e as MessageEvent).data;
         if (data) {
           try {
             setError(JSON.parse(data).error);
+            api.experiment(id).then(setExperiment).catch(() => undefined);
+            src.close();
           } catch {
             /* transport-level error: the browser retries on its own */
           }
@@ -106,7 +118,32 @@ export default function App() {
 
   useEffect(() => () => sourceRef.current?.close(), []);
 
-  const start = async () => {
+  useEffect(() => {
+    if (restoreRef.current) return;
+    restoreRef.current = true;
+    let saved: { id: string; automatic?: boolean } | null = null;
+    try { saved = JSON.parse(sessionStorage.getItem('drucion-search') ?? 'null'); } catch { /* Storage is optional. */ }
+    if (!saved?.id) { setRestoring(false); return; }
+    const id = saved.id;
+    const automatic = saved.automatic;
+    Promise.all([api.experiment(id), api.results(id)])
+      .then(([state, result]) => {
+        autoRunRef.current = !!automatic && ['created', 'preparing', 'ready'].includes(state.status);
+        setExperiment(state); setResults(result); setRounds(result.rounds.filter(r => r.round > 0));
+        if (!['done', 'error'].includes(state.status)) connect(id);
+      })
+      .catch(() => { try { sessionStorage.removeItem('drucion-search'); } catch { /* Storage is optional. */ } setError('Your previous search is no longer available. You can start a new search below.'); })
+      .finally(() => setRestoring(false));
+  }, [connect]);
+
+  useEffect(() => {
+    if (experiment?.status !== 'ready' || !autoRunRef.current) return;
+    autoRunRef.current = false;
+    rememberSearch(experiment.id, false);
+    api.run(experiment.id).then(setExperiment).catch((e: Error) => setError(`Your search is ready, but could not start automatically. Select Continue search to try again. ${e.message}`));
+  }, [experiment]);
+
+  const start = async (automatic: boolean) => {
     setStarting(true);
     setError(null);
     setRounds([]);
@@ -114,6 +151,8 @@ export default function App() {
     setEmbedProgress(null);
     try {
       const created = await api.createExperiment(spec);
+      autoRunRef.current = automatic;
+      rememberSearch(created.id, automatic);
       setExperiment(created);
       connect(created.id);
       navigate('live');
@@ -154,7 +193,7 @@ export default function App() {
 
   const pause = async () => {
     if (!experiment) return;
-    await api.pause(experiment.id).catch(() => undefined);
+    await api.pause(experiment.id).catch((e: Error) => setError(`Could not pause the search: ${e.message}`));
   };
 
   const reset = async () => {
@@ -164,6 +203,8 @@ export default function App() {
     setError(null);
     try {
       const fresh = await api.reset(experiment.id);
+      autoRunRef.current = false;
+      rememberSearch(fresh.id, false);
       setExperiment(fresh);
       connect(fresh.id);
     } catch (e) {
@@ -199,19 +240,23 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-note"><span className="eyebrow">THE EXPERIMENT LOOP</span><p>Predict. Measure.<br/>Learn. Repeat.</p><span>Find better variants with a focused measurement budget.</span></div>
-        <div className="sidebar-footer"><span className={`status-dot ${device ? 'online' : ''}`} />{device ? 'Local engine connected' : 'Connecting to engine…'}<small>ProteinGym · Retrospective experiments</small></div>
+        <div className="sidebar-footer"><span className={`status-dot ${device ? 'online' : ''}`} />{device ? 'Ready to explore' : engineError ? 'Server unavailable' : 'Connecting…'}<small>Demo · Published protein data</small></div>
       </aside>
       <div className="workspace">
-        <header className="topbar"><span>Research workspace <span className="breadcrumb-divider">/</span> <strong>{TABS.find(t => t.id === tab)?.label}</strong></span><span className="environment-label">LOCAL WORKSPACE</span></header>
+        <header className="topbar"><span>Your workspace <span className="breadcrumb-divider">/</span> <strong>{TABS.find(t => t.id === tab)?.label}</strong></span><span className="environment-label">DEMO WORKSPACE</span></header>
         <main className="main" id="main-content" tabIndex={-1}>
-          <div className="page-heading"><div><div className="eyebrow">{tab === 'setup' ? 'DESIGN YOUR NEXT EXPERIMENT' : 'EXPERIMENT WORKSPACE'}</div><h1>{tab === 'setup' ? 'Design an experiment.' : tab === 'live' ? 'Live optimization.' : tab === 'benchmark' ? 'Compare the evidence.' : 'Explore your variants.'}</h1><p>{tab === 'setup' ? 'Choose a protein, set a budget, and let each measurement inform the next.' : tab === 'live' ? 'Watch predictions become observations, one round at a time.' : tab === 'benchmark' ? 'Compare selection strategies under the same experimental conditions.' : 'Explore sequence changes and the measurements behind each discovery.'}</p></div><span className="page-index">0{TABS.findIndex(t => t.id === tab) + 1} / 04</span></div>
+          <div className="page-heading"><div><div className="eyebrow">{tab === 'setup' ? 'YOUR NEXT DISCOVERY STARTS HERE' : 'YOUR DISCOVERY WORKSPACE'}</div><h1>{tab === 'setup' ? 'Find better protein variants.' : tab === 'live' ? 'Your search, explained.' : tab === 'benchmark' ? 'See how each approach performs.' : 'Meet your best candidates.'}</h1><p>{tab === 'setup' ? 'Choose a starting point. Let Drucion guide the search.' : tab === 'live' ? 'Follow what’s happening, what we’ve learned, and what comes next.' : tab === 'benchmark' ? 'Explore saved examples to understand when guided search helps.' : 'See what your search found and inspect the results behind it.'}</p></div><span className="page-index">0{TABS.findIndex(t => t.id === tab) + 1} / 04</span></div>
           <Suspense fallback={<div className="empty" role="status"><span className="spinner" /> Loading workspace…</div>}>
+        {restoring && <div className="alert info" role="status">Restoring your last search…</div>}
         {tab === 'setup' && (
           <Setup
             spec={spec}
             onChange={setSpec}
             onStart={start}
-            starting={starting}
+            starting={starting || restoring}
+            onPreview={() => navigate('benchmark')}
+            onResume={() => navigate('live')}
+            active={!!experiment && !['done', 'error'].includes(experiment.status)}
             error={error}
           />
         )}
@@ -220,6 +265,7 @@ export default function App() {
             {error && <div className="alert err">{error}</div>}
             <Live
               onSetup={() => navigate('setup')}
+              onResults={() => navigate('explorer')}
               experiment={experiment}
               rounds={rounds}
               busy={busy}
@@ -234,9 +280,13 @@ export default function App() {
         {tab === 'benchmark' && <Benchmark />}
         {tab === 'explorer' && <Explorer results={results} onSetup={() => navigate('setup')} />}
           </Suspense>
-          <footer className="workspace-footer"><span>Drucion / Research edition</span><span>Published measurements. Transparent predictions.</span></footer>
+          <footer className="workspace-footer"><span>Drucion · Protein discovery</span><span>Published measurements. Transparent predictions.</span></footer>
         </main>
       </div>
     </div>
   );
+}
+
+function rememberSearch(id: string, automatic: boolean) {
+  try { sessionStorage.setItem('drucion-search', JSON.stringify({ id, automatic })); } catch { /* The search still works without browser storage. */ }
 }

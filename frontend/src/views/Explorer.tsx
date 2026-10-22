@@ -7,7 +7,7 @@ export function Explorer({ results, onSetup }: { results: ExperimentResults | nu
     return (
       <div className="card">
         <div className="empty">
-          <div className="empty-glyph" aria-hidden="true">⌁</div><h2>Every variant has a story.</h2><p>Start an experiment to compare sequences, explore mutations, and inspect measured results.</p><button className="btn btn-primary" onClick={onSetup}>Configure an experiment →</button>
+          <div className="empty-glyph" aria-hidden="true">⌁</div><h2>Every variant has a story.</h2><p>Start an experiment to compare sequences, explore mutations, and inspect measured results.</p><button className="btn btn-primary" onClick={onSetup}>Start my first search →</button>
         </div>
       </div>
     );
@@ -17,6 +17,7 @@ export function Explorer({ results, onSetup }: { results: ExperimentResults | nu
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <div className="result-intro"><span className="eyebrow">{results.status === 'done' ? 'SEARCH COMPLETE' : 'RESULTS SO FAR'}</span><h2>{results.best_mutant ? `Your best candidate: ${results.best_mutant}` : 'Your candidates are on the way'}</h2><p>This is the highest-scoring variant found in your search so far. Its score comes from a published measurement, not a model prediction. Compare it with the original protein below.</p><button className="text-button" onClick={onSetup}>Start another search →</button></div>
       <BestVariant results={results} />
 
       <div className="grid chart-grid">
@@ -39,7 +40,7 @@ export function Explorer({ results, onSetup }: { results: ExperimentResults | nu
           {splitHighlight(results.wild_type, mutatedPositions)}
         </div>
         <div style={{ margin: '14px 0 6px' }} className="note">
-          Best discovered variant — <code>{results.best_mutant}</code>
+          Your best result — <code>{results.best_mutant}</code>
         </div>
         <div className="seq">
           {splitHighlight(results.best_sequence, mutatedPositions)}
@@ -66,7 +67,7 @@ function BestVariant({ results }: { results: ExperimentResults }) {
   return (
     <div className="card">
       <div className="card-head">
-        <div className="card-title">Best discovered variant</div>
+        <div className="card-title">Your best result</div>
         <span className="badge">{METHOD_LABELS[results.acquisition] ?? results.acquisition}</span>
       </div>
       <div className="stats">
@@ -81,14 +82,14 @@ function BestVariant({ results }: { results: ExperimentResults }) {
           </div>
         </div>
         <div className="stat">
-          <div className="stat-label">Measured fitness</div>
+          <div className="stat-label">Actual score</div>
           <div className="stat-value measured">
             {results.best_measured != null ? results.best_measured.toFixed(3) : '—'}
           </div>
           <div className="stat-sub">real DMS measurement</div>
         </div>
         <div className="stat">
-          <div className="stat-label">Model prediction</div>
+          <div className="stat-label">Expected score</div>
           <div className="stat-value predicted">
             {found?.variant.predicted_fitness != null
               ? found.variant.predicted_fitness.toFixed(3)
@@ -101,14 +102,14 @@ function BestVariant({ results }: { results: ExperimentResults }) {
           </div>
         </div>
         <div className="stat">
-          <div className="stat-label">Found at round</div>
+          <div className="stat-label">First found in round</div>
           <div className="stat-value">{found ? found.round : '0'}</div>
           <div className="stat-sub">
             {found ? 'during active learning' : 'in the initial random design'}
           </div>
         </div>
         <div className="stat">
-          <div className="stat-label">Measurements spent</div>
+          <div className="stat-label">Variants checked</div>
           <div className="stat-value">{results.n_measured}</div>
           <div className="stat-sub">of {results.budget} budget</div>
         </div>
@@ -166,7 +167,7 @@ function PredictionVsMeasurement({ results }: { results: ExperimentResults }) {
   return (
     <div className="card">
       <div className="card-head">
-        <div className="card-title">Predicted vs. measured fitness</div>
+        <div className="card-title">Expected scores vs. actual results</div>
         <span className="badge">{points.pred.length} selected variants</span>
       </div>
       <Plot
@@ -202,14 +203,14 @@ function PredictionVsMeasurement({ results }: { results: ExperimentResults }) {
         ]}
         layout={{
           xaxis: { title: { text: 'Predicted fitness (before measuring)' } },
-          yaxis: { title: { text: 'Measured fitness (real DMS)' } },
+          yaxis: { title: { text: 'Actual score (real DMS)' } },
           showlegend: false,
           margin: { l: 58, r: 10, t: 10, b: 50 },
         }}
       />
       <div className="note">
-        Points on the dashed line are perfect predictions. Later rounds (lighter) should sit
-        closer to it as the surrogate learns from accumulated measurements.
+        Points closer to the dashed line have more accurate predictions. Lighter points
+        come from later rounds; compare them to see whether predictions improved.
       </div>
     </div>
   );
@@ -284,8 +285,8 @@ function MutationMap({ results }: { results: ExperimentResults }) {
         }}
       />
       <div className="note">
-        Green marks the position(s) mutated in the best variant found. Clustering indicates
-        the surrogate concentrating the budget on a promising region of the protein.
+        Green marks the position(s) changed in your best variant. Groups of points show
+        where the search spent more of its measurement budget.
       </div>
     </div>
   );

@@ -188,11 +188,11 @@ export const api = {
 };
 
 export const METHOD_LABELS: Record<string, string> = {
-  random: 'Random selection',
-  evolutionary: 'ESM-guided evolutionary',
-  greedy: 'Greedy surrogate',
-  ei: 'Bayesian AL (EI)',
-  ucb: 'Bayesian AL (UCB)',
+  random: 'Random sampling',
+  evolutionary: 'Sequence-guided search',
+  greedy: 'Highest-score first',
+  ei: 'Improvement-focused search',
+  ucb: 'Balanced search',
 };
 
 /** Okabe-Ito colour-blind-safe palette, shared with the Python plots. */

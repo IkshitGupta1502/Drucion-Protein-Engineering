@@ -2,9 +2,10 @@
 
 **Track:** Self-Accelerating AI for Drug Development
 
-**One-line pitch:** Drucion is an AI that learns which protein experiment to run
-next — and on real β-lactamase data it finds 3.3× more top-performing variants
-than random screening, using 30% fewer measurements.
+**One-line pitch:** Drucion is an AI that learns which protein experiment to
+run next. On real β-lactamase data it finds 3.3× more top-performing variants
+than random screening using 30% fewer measurements — and across three assays it
+shows exactly when that advantage holds and when it vanishes.
 
 ---
 
@@ -123,28 +124,35 @@ That last beat is deliberate. Judges notice teams that mark their own limits.
 
 ---
 
-## 2:40 — 3:00 · The negative result and the close
+## 2:40 — 3:00 · The result that doesn't flatter us, and the close
 
-Switch the benchmark dropdown to **TPMT**.
+Switch the benchmark dropdown through **TEM-1** and **TPMT**.
 
-> "We ran a second protein — a human pharmacogene — and here active learning
-> **does not beat random**. We're showing you that because it's the most
-> informative thing we found.
+> "We ran three assays, and the honest headline is a relationship, not a win.
+
+Point at the three-assay table in the README, or just say the numbers:
+
+> "Surrogate accuracy 0.56, 0.48, 0.35. Enrichment over random: 3.3×, 2.7×,
+> 1.1×. **The benefit tracks how well the model can actually rank variants** —
+> monotonically. Where the model knows something, steering by it pays off.
+> Where it doesn't, the loop degenerates into an expensive random search, and
+> on TPMT it buys nothing measurable.
 >
-> The reason is right there in the surrogate accuracy curve: on VIM-2 it
-> reaches 0.56, on TPMT it stalls at 0.34. The benefit of active learning
-> tracks how well the surrogate can actually rank variants. When the model
-> knows something, steering by it pays off; when it doesn't, it shouldn't —
-> and it doesn't. That's a system behaving correctly, and it tells you exactly
-> when to deploy it."
+> And two things that don't go our way. On TEM-1 our Bayesian learner is
+> beaten by our own ESM baseline — the one that trains nothing. That baseline
+> is the best method on two of the three assays. So the claim we can actually
+> defend is 'model-guided selection beats random when the model has signal',
+> not 'our learned surrogate beats everything'. We're not going to crown a
+> winner off ten seeds."
 
 Close:
 
-> "So: a working closed loop on real experimental data, a 3.3× enrichment
-> with 30% fewer measurements, honest statistics including the ones that
-> don't go our way, and a clear mechanistic account of when it works. 258 tests, 19 of
-> them specifically pinning that the hidden labels stay hidden — because a
-> benchmark that leaks is worth nothing."
+> "So: a working closed loop on real experimental data, a 3.3× enrichment with
+> 30% fewer measurements on the assay where the model learns, a monotone
+> account of when that transfers and when it doesn't, and a baseline that
+> beats us twice — reported rather than buried. 258 tests, 19 of them
+> specifically pinning that the hidden labels stay hidden, because a benchmark
+> that leaks is worth nothing."
 
 ---
 
@@ -203,5 +211,6 @@ should *increase* the active-learning advantage.
 | Slow first load | ESM-2 weights downloading from HuggingFace — do this once before the demo |
 | Port 8000 busy | `--port 8001`, and the frontend dev proxy follows |
 
-**Pre-demo checklist:** server running, embeddings cached for VIM-2 and TPMT,
+**Pre-demo checklist:** server running, embeddings cached for VIM-2, TEM-1 and
+TPMT,
 `results/` populated, Benchmark tab pre-opened in a second browser tab.

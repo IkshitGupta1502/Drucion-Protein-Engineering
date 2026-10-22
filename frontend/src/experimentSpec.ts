@@ -24,7 +24,7 @@ export const DEFAULT_SPEC: ExperimentSpec = {
   loop: {
     n_initial: 50,
     batch_size: 10,
-    n_rounds: 15,
+    n_rounds: 3,
     seed: 0,
     acquisition: 'ucb',
     ucb_beta: 2.0,

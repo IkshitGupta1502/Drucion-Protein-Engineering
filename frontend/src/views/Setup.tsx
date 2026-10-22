@@ -1,248 +1,105 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, type AssayDetail, type AssaySummary } from '../api';
-
 import { type ExperimentSpec } from '../experimentSpec';
 
-/** Assays we have precomputed ESM-2 embeddings for; others run slower. */
 const FEATURED = ['A4GRB6_PSEAI_Chen_2020', 'TPMT_HUMAN_Matreyek_2018', 'BLAT_ECOLX_Firnberg_2014'];
-
+const SAMPLE_NAMES: Record<string, string> = {
+  A4GRB6_PSEAI_Chen_2020: 'VIM-2 enzyme · Recommended first run',
+  TPMT_HUMAN_Matreyek_2018: 'TPMT protein · Try a different challenge',
+  BLAT_ECOLX_Firnberg_2014: 'TEM-1 enzyme · Explore another dataset',
+};
 interface Props {
   spec: ExperimentSpec;
   onChange: (spec: ExperimentSpec) => void;
-  onStart: () => void;
+  onStart: (automatic: boolean) => void;
+  onPreview: () => void;
   starting: boolean;
+  active: boolean;
+  onResume: () => void;
   error: string | null;
 }
 
-export function Setup({ spec, onChange, onStart, starting, error }: Props) {
+export function Setup({ spec, onChange, onStart, onPreview, starting, active, onResume, error }: Props) {
   const [assays, setAssays] = useState<AssaySummary[]>([]);
   const [detail, setDetail] = useState<AssayDetail | null>(null);
-  const [detailError, setDetailError] = useState<string | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [listError, setListError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .assays()
-      .then(setAssays)
-      .catch((e: Error) => setListError(e.message));
-  }, []);
-
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [automatic, setAutomatic] = useState(true);
   useEffect(() => {
     let cancelled = false;
-    setLoadingDetail(true);
-    setDetail(null);
-    setDetailError(null);
-    api
-      .assay(spec.assay_id, true)
-      .then((d) => {
-        if (!cancelled) setDetail(d);
-      })
-      .catch((e: Error) => { if (!cancelled) setDetailError(e.message); })
-      .finally(() => {
-        if (!cancelled) setLoadingDetail(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [spec.assay_id]);
-
-  const sorted = useMemo(() => {
-    const featured = assays.filter((a) => FEATURED.includes(a.assay_id));
-    const rest = assays
-      .filter((a) => !FEATURED.includes(a.assay_id))
-      .sort((a, b) => a.assay_id.localeCompare(b.assay_id));
-    return { featured, rest };
-  }, [assays]);
-
-  const set = (patch: Partial<ExperimentSpec>) => onChange({ ...spec, ...patch });
-  const setLoop = (patch: Partial<ExperimentSpec['loop']>) =>
-    onChange({ ...spec, loop: { ...spec.loop, ...patch } });
-
+    setLoading(true); setLoadError(null); setDetail(null);
+    Promise.all([api.assays(), api.assay(spec.assay_id, true)])
+      .then(([list, selected]) => { if (!cancelled) { setAssays(list); setDetail(selected); } })
+      .catch((e: Error) => { if (!cancelled) setLoadError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [spec.assay_id, retry]);
+  const setLoop = (patch: Partial<ExperimentSpec['loop']>) => onChange({ ...spec, loop: { ...spec.loop, ...patch } });
   const budget = spec.loop.n_initial + spec.loop.batch_size * spec.loop.n_rounds;
-  const poolSize = detail?.pool_size ?? 0;
-  const validNumbers = Number.isInteger(spec.loop.n_initial) && spec.loop.n_initial >= 2 && spec.loop.n_initial <= 2000 && Number.isInteger(spec.loop.batch_size) && spec.loop.batch_size >= 1 && spec.loop.batch_size <= 500 && Number.isInteger(spec.loop.n_rounds) && spec.loop.n_rounds >= 1 && spec.loop.n_rounds <= 200 && Number.isInteger(spec.loop.seed) && spec.loop.seed >= 0 && spec.loop.seed <= 10000 && spec.loop.ucb_beta >= 0 && spec.loop.ucb_beta <= 20;
-  const overBudget = poolSize > 0 && budget >= poolSize;
-
+  const starter = spec.loop.n_initial === 50 && spec.loop.batch_size === 10 && spec.loop.n_rounds === 3;
+  const extended = spec.loop.n_initial === 50 && spec.loop.batch_size === 10 && spec.loop.n_rounds === 15;
+  const valid = Number.isInteger(spec.loop.n_initial) && spec.loop.n_initial >= 2 && spec.loop.n_initial <= 2000
+    && Number.isInteger(spec.loop.batch_size) && spec.loop.batch_size >= 1 && spec.loop.batch_size <= 500
+    && Number.isInteger(spec.loop.n_rounds) && spec.loop.n_rounds >= 1 && spec.loop.n_rounds <= 200
+    && Number.isInteger(spec.loop.seed) && spec.loop.seed >= 0 && spec.loop.seed <= 10000
+    && Number.isFinite(spec.loop.ucb_beta) && spec.loop.ucb_beta >= 0 && spec.loop.ucb_beta <= 20;
+  const tooLarge = !!detail?.pool_size && budget >= detail.pool_size;
+  const featured = assays.filter(a => FEATURED.includes(a.assay_id));
+  const rest = assays.filter(a => !FEATURED.includes(a.assay_id));
   return (
-    <div className="grid setup-grid">
-      <div className="setup-controls">
-        <div className="card">
-          <div className="section-heading"><span className="step-label">02</span><div><h2>Configure your run</h2><p>Define how the model explores.</p></div></div>
-
-          {listError && <div className="alert err">Could not load assays: {listError}</div>}
+    <>
+      {active && <div className="resume-banner"><div><strong>You have a run in progress.</strong><p>Pick up where you left off before starting another.</p></div><button className="btn" onClick={onResume}>Return to my run →</button></div>}
+      <div className="onboarding-grid">
+        <section className="welcome-panel" aria-labelledby="welcome-title">
+          <span className="badge ok">Ready-to-run protein datasets</span>
+          <h2 id="welcome-title">Spend your next experiment <br/>on a better candidate.</h2>
+          <p className="welcome-copy">Drucion helps you choose which protein variants to test next. It learns from each result and uses that feedback to guide the next batch.</p>
+          <button className="btn btn-primary mobile-start-link" onClick={() => { const target = document.getElementById('start-title'); target?.scrollIntoView({ block: 'start' }); target?.focus({ preventScroll: true }); }}>Set up my first search ↓</button>
+          <ol className="journey-list">
+            <li><span>1</span><div><h3>Choose your starting point</h3><p>Use a ready-made dataset. No files to upload or model to train yourself.</p></div></li>
+            <li><span>2</span><div><h3>Watch the search learn</h3><p>Drucion starts with a small sample, picks promising variants, and checks their results.</p></div></li>
+            <li><span>3</span><div><h3>See what you found</h3><p>Get the best variant found, its measured score, and a clear view of your progress.</p></div></li>
+          </ol>
+          <div className="demo-explainer"><strong>Try it with real results, without a lab.</strong><p>This demo reveals published protein measurements as it runs. It uses no lab equipment and does not spend money or perform new experiments.</p></div>
+          <button className="text-button" onClick={onPreview}>Just looking? Explore example results →</button>
+        </section>
+        <section className="card start-card" aria-labelledby="start-title">
+          <div className="card-head"><h2 id="start-title" tabIndex={-1}>Start your first search</h2><span className="badge">No setup required</span></div>
+          <p className="start-intro">We’ve picked a starting dataset and balanced search settings. You can change them anytime before you start.</p>
+          {loadError && <div className="alert err" role="alert"><strong>We couldn’t load the datasets.</strong><p>Check that the Drucion server is running, then try again.</p><details><summary>Technical details</summary>{loadError}</details><button className="btn" onClick={() => setRetry(v => v + 1)}>Try again</button></div>}
           {error && <div className="alert err" role="alert">{error}</div>}
-          {detailError && <div className="alert err" role="alert">Could not load assay: {detailError}</div>}
-
-          <div className="field">
-            <label htmlFor="assay">ProteinGym assay</label>
-            <select
-              id="assay"
-              value={spec.assay_id}
-              onChange={(e) => set({ assay_id: e.target.value })}
-            >
-              <optgroup label="Featured (embeddings precomputed)">
-                {sorted.featured.map((a) => (
-                  <option key={a.assay_id} value={a.assay_id}>
-                    {a.assay_id} — {a.molecule_name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label={`All available (${sorted.rest.length})`}>
-                {sorted.rest.map((a) => (
-                  <option key={a.assay_id} value={a.assay_id}>
-                    {a.assay_id} — {a.molecule_name}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-            <div className="field-hint">
-              Published experimental data. Featured assays have cached protein features.
-            </div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="acq">Selection method</label>
-            <select
-              id="acq"
-              value={spec.loop.acquisition}
-              onChange={(e) =>
-                setLoop({ acquisition: e.target.value as ExperimentSpec['loop']['acquisition'] })
-              }
-            >
-              <option value="ucb">Bayesian active learning — UCB</option>
-              <option value="ei">Bayesian active learning — Expected Improvement</option>
-              <option value="greedy">Greedy surrogate (pure exploitation)</option>
-              <option value="evolutionary">ESM-guided evolutionary (no surrogate)</option>
-              <option value="random">Random selection (baseline)</option>
-            </select>
-          </div>
-
-          <div className="row">
-            <div className="field">
-              <label htmlFor="init">Initial measurements</label>
-              <input
-                id="init"
-                type="number"
-                min={2}
-                max={2000}
-                value={spec.loop.n_initial}
-                onChange={(e) => setLoop({ n_initial: Number(e.target.value) })}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="batch">Batch size per round</label>
-              <input
-                id="batch"
-                type="number"
-                min={1}
-                max={500}
-                value={spec.loop.batch_size}
-                onChange={(e) => setLoop({ batch_size: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-
-          <div className="row">
-            <div className="field">
-              <label htmlFor="rounds">Rounds</label>
-              <input
-                id="rounds"
-                type="number"
-                min={1}
-                max={200}
-                value={spec.loop.n_rounds}
-                onChange={(e) => setLoop({ n_rounds: Number(e.target.value) })}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="seed">Random seed</label>
-              <input
-                id="seed"
-                type="number"
-                min={0}
-                max={10000}
-                value={spec.loop.seed}
-                onChange={(e) => setLoop({ seed: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-
-          <details className="advanced-settings"><summary>Model & exploration settings<span>Advanced</span></summary><div className="advanced-content">
-          <div className="row">
-            <div className="field">
-              <label htmlFor="feat">Protein representation</label>
-              <select
-                id="feat"
-                value={spec.featurizer}
-                onChange={(e) =>
-                  set({ featurizer: e.target.value as ExperimentSpec['featurizer'] })
-                }
-              >
-                <option value="esm2">ESM-2 site-resolved</option>
-                <option value="esm2_mean">ESM-2 mean-pooled</option>
-                <option value="onehot">Mutation one-hot (control)</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="sur">Surrogate model</label>
-              <select
-                id="sur"
-                value={spec.surrogate}
-                onChange={(e) => set({ surrogate: e.target.value as 'gp' | 'rf' })}
-              >
-                <option value="gp">Gaussian process (BoTorch)</option>
-                <option value="rf">Random-forest ensemble</option>
-              </select>
-            </div>
-          </div>
-
-          {spec.loop.acquisition === 'ucb' && (
-            <div className="field">
-              <label htmlFor="beta">UCB exploration weight (β = {spec.loop.ucb_beta})</label>
-              <input
-                id="beta"
-                type="number"
-                step={0.5}
-                min={0}
-                max={20}
-                value={spec.loop.ucb_beta}
-                onChange={(e) => setLoop({ ucb_beta: Number(e.target.value) })}
-              />
-              <div className="field-hint">
-                Acquisition = posterior mean + β × posterior s.d. Higher explores more.
-              </div>
-            </div>
-          )}
-
+          <div className="field"><label htmlFor="assay">1. Choose a protein dataset</label><select id="assay" value={spec.assay_id} disabled={loading} onChange={e => onChange({ ...spec, assay_id: e.target.value })}>
+            {assays.length === 0 && <option value={spec.assay_id}>Loading datasets…</option>}
+            <optgroup label="Ready-to-run examples">{featured.map(a => <option key={a.assay_id} value={a.assay_id}>{SAMPLE_NAMES[a.assay_id]}</option>)}</optgroup>
+            <optgroup label="More datasets">{rest.map(a => <option key={a.assay_id} value={a.assay_id}>{a.molecule_name} · {a.assay_id}</option>)}</optgroup>
+          </select><div className="field-hint">{loading ? 'Checking the available measurements…' : detail ? `${detail.pool_size?.toLocaleString()} protein variants available to explore. A variant is a version of a protein with a small sequence change.` : 'Choose a dataset to continue.'}</div></div>
+          <fieldset className="plan-picker"><legend>2. Choose how far to explore</legend><div className="plan-options">
+            <button type="button" className={`plan-option ${starter ? 'selected' : ''}`} aria-pressed={starter} onClick={() => setLoop({ n_initial: 50, batch_size: 10, n_rounds: 3 })}><span>Quick start</span><strong>80 <small>measurements</small></strong><p>3 learning rounds · Try the workflow</p></button>
+            <button type="button" className={`plan-option ${extended ? 'selected' : ''}`} aria-pressed={extended} onClick={() => setLoop({ n_initial: 50, batch_size: 10, n_rounds: 15 })}><span>Explore further</span><strong>200 <small>measurements</small></strong><p>15 learning rounds · A deeper search</p></button>
+          </div>{!starter && !extended && <p className="field-hint">Custom plan selected below.</p>}</fieldset>
+          <details className="advanced-settings"><summary>Customize search settings<span>Optional</span></summary><div className="advanced-content">
+            <p className="note">The defaults are ready to use. These controls let you change how candidates are chosen and how much data the search uses.</p>
+            <div className="field"><label htmlFor="acq">Search approach</label><select id="acq" value={spec.loop.acquisition} onChange={e => setLoop({ acquisition: e.target.value as ExperimentSpec['loop']['acquisition'] })}><option value="ucb">Balanced search (UCB) — recommended</option><option value="ei">Expected improvement (EI)</option><option value="greedy">Highest predicted score first</option><option value="evolutionary">Sequence-guided search</option><option value="random">Random sampling — comparison baseline</option></select><p className="field-hint">Balanced search weighs promising scores against opportunities the model is less certain about.</p></div>
+            <div className="row"><NumberField id="init" label="Starting sample" value={spec.loop.n_initial} min={2} max={2000} onChange={v => setLoop({ n_initial: v })}/><NumberField id="batch" label="Variants per round" value={spec.loop.batch_size} min={1} max={500} onChange={v => setLoop({ batch_size: v })}/></div>
+            <div className="row"><NumberField id="rounds" label="Learning rounds" value={spec.loop.n_rounds} min={1} max={200} onChange={v => setLoop({ n_rounds: v })}/><NumberField id="seed" label="Random seed" value={spec.loop.seed} min={0} max={10000} onChange={v => setLoop({ seed: v })}/></div>
+            <div className="field"><label htmlFor="feat">Protein representation</label><select id="feat" value={spec.featurizer} onChange={e => onChange({ ...spec, featurizer: e.target.value as ExperimentSpec['featurizer'] })}><option value="esm2">ESM-2 site-resolved (recommended)</option><option value="esm2_mean">ESM-2 mean-pooled</option><option value="onehot">Mutation one-hot</option></select></div>
+            <div className="field"><label htmlFor="sur">Prediction model</label><select id="sur" value={spec.surrogate} onChange={e => onChange({ ...spec, surrogate: e.target.value as 'gp' | 'rf' })}><option value="gp">Gaussian process (recommended)</option><option value="rf">Random forest</option></select></div>
+            {spec.loop.acquisition === 'ucb' && <NumberField id="beta" label="Exploration weight" value={spec.loop.ucb_beta} min={0} max={20} step={0.5} onChange={v => setLoop({ ucb_beta: v })}/>}
           </div></details>
-          <div className="budget-summary">
-            <span className="eyebrow">TOTAL MEASUREMENT BUDGET</span><div className="budget-number">{validNumbers ? budget.toLocaleString() : '—'} <span>measurements</span></div>
-            {poolSize > 0 && <> out of {poolSize.toLocaleString()} measured variants</>}
-            {overBudget && (
-              <div style={{ marginTop: 6 }}>
-                That budget exceeds the candidate pool — reduce rounds or batch size.
-              </div>
-            )}
-          </div>
-
-          {!validNumbers && <p className="alert err" role="alert">Enter whole numbers within the measurement, round, and seed limits shown in each field.</p>}
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%' }}
-            onClick={onStart}
-            disabled={starting || overBudget || !validNumbers || loadingDetail || !detail || !!detailError}
-          >
-            {starting ? <><span className="spinner" /> Preparing…</> : 'Start experiment →'}
-          </button>
-        </div>
+          <label className="check-field"><input type="checkbox" checked={automatic} onChange={e => setAutomatic(e.target.checked)}/><span>Run all rounds automatically<small>Turn this off to review each batch before continuing.</small></span></label>
+          <div className="run-receipt"><strong>Here’s what will happen</strong><p>{valid ? <>Start with {spec.loop.n_initial} known results, then check {spec.loop.batch_size} more variants in each of {spec.loop.n_rounds} rounds. That’s <b>{budget} measurements total</b>.</> : 'Set valid search limits to continue.'}</p></div>
+          {(!valid || tooLarge) && <p className="alert err" role="alert">{tooLarge ? 'This dataset is too small for the selected plan. Reduce the starting sample or number of rounds.' : 'Check the number limits in Customize search settings.'}</p>}
+          <button className="btn btn-primary start-search" onClick={() => onStart(automatic)} disabled={starting || loading || !detail || !!loadError || !valid || tooLarge || active}>{starting ? 'Starting your search…' : loading ? 'Loading your dataset…' : active ? 'A search is already in progress' : 'Start my search →'}</button>
+          <p className="cta-note">{automatic ? 'We’ll handle the next steps. You can pause between rounds.' : 'You’ll choose when to run each round.'} Preparation can take longer the first time a dataset is used.</p>
+        </section>
       </div>
-
-      <div className="setup-dataset">
-        <AssayCard detail={detail} loading={loadingDetail} />
-      </div>
-    </div>
+      <details className="dataset-details"><summary>About the data & how results are measured<span>For a closer look</span></summary><AssayCard detail={detail} loading={loading}/></details>
+    </>
   );
+}
+function NumberField({ id, label, value, min, max, step = 1, onChange }: { id: string; label: string; value: number; min: number; max: number; step?: number; onChange: (value: number) => void }) {
+  return <div className="field"><label htmlFor={id}>{label}</label><input id={id} type="number" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))}/><span className="field-hint">{min}–{max}</span></div>;
 }
 
 function AssayCard({ detail, loading }: { detail: AssayDetail | null; loading: boolean }) {

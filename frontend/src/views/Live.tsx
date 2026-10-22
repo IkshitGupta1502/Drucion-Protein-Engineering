@@ -4,6 +4,7 @@ import { Plot } from '../components/Plot';
 
 interface Props {
   onSetup: () => void;
+  onResults: () => void;
   experiment: ExperimentState | null;
   rounds: RoundRecord[];
   busy: boolean;
@@ -16,6 +17,7 @@ interface Props {
 
 export function Live({
   onSetup,
+  onResults,
   experiment,
   rounds,
   busy,
@@ -29,7 +31,7 @@ export function Live({
     return (
       <div className="card">
         <div className="empty">
-          <div className="empty-glyph" aria-hidden="true">↗</div><h2>Your next discovery starts with a run.</h2><p>Choose an assay and a measurement budget to follow the model as it learns.</p><button className="btn btn-primary" onClick={onSetup}>Configure an experiment →</button>
+          <div className="empty-glyph" aria-hidden="true">↗</div><h2>Your next discovery starts with a run.</h2><p>Try a ready-made dataset. Drucion will choose candidates, check their results, and show you what it learns.</p><button className="btn btn-primary" onClick={onSetup}>Start my first search →</button>
         </div>
       </div>
     );
@@ -40,9 +42,28 @@ export function Live({
   const running = experiment.status === 'running';
   const done = experiment.status === 'done';
   const curve = experiment.learning_curve;
+  const failed = experiment.status === 'error';
+  const initialBest = curve?.best_measured[0];
+  const improvement = initialBest != null && experiment.best_measured != null ? experiment.best_measured - initialBest : null;
+  const explanation = failed
+    ? { title: 'Your search needs attention.', text: 'The search stopped before it could finish. Review the error below, then try again or choose another dataset.' }
+    : preparing
+      ? { title: 'Getting to know your protein.', text: 'We’re preparing protein features and checking the starting measurements. The first run on a dataset can take longer; you can stay on this page while it prepares.' }
+      : done
+        ? { title: 'Your search is complete.', text: `${experiment.n_measured} measurements checked across ${experiment.round} learning rounds. ${improvement != null && improvement > 0 ? `The best score improved by ${improvement.toFixed(3)} from your starting sample.` : 'No better score was found than the best variant in your starting sample. That can happen with a limited search.'}` }
+        : running || busy
+          ? { title: 'Choosing, checking, and learning.', text: 'Drucion is using the results so far to choose the next batch. It then reveals those measurements and updates its model for the next round.' }
+          : { title: experiment.round ? 'Ready for your next round.' : 'Your starting sample is ready.', text: `We’ve checked ${experiment.n_measured} variants. Continue the search to complete the remaining rounds, or check one batch at a time to see each decision.` };
+
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <section className={`search-guide ${done ? 'complete' : ''}`} aria-labelledby="search-status">
+        <div className="guide-copy" role="status"><span className="eyebrow">{done ? 'YOUR RESULTS ARE READY' : failed ? 'SEARCH PAUSED BY AN ERROR' : 'WHAT’S HAPPENING NOW'}</span><h2 id="search-status">{explanation.title}</h2><p>{explanation.text}</p></div>
+        {done && <button className="btn btn-primary" onClick={onResults}>View my results →</button>}
+        {failed && <button className="btn" onClick={onSetup}>Change search settings</button>}
+        <ol className="search-stages" aria-label="Search progress"><li className={!preparing ? 'reached' : 'current'}><span>1</span>Prepare your starting sample</li><li className={done ? 'reached' : running || busy ? 'current' : ''}><span>2</span>Learn across {experiment.n_rounds} rounds</li><li className={done ? 'reached' : ''}><span>3</span>Review your candidates</li></ol>
+      </section>
       <ControlBar
         experiment={experiment}
         busy={busy}
@@ -63,8 +84,8 @@ export function Live({
           <div style={{ marginBottom: 10 }}>
             <span className="spinner" />{' '}
             {embedProgress
-              ? `Computing ESM-2 embeddings for the candidate pool — ${embedProgress.done.toLocaleString()} / ${embedProgress.total.toLocaleString()} sequences`
-              : 'Loading and validating the assay…'}
+              ? `Preparing protein features — ${embedProgress.done.toLocaleString()} / ${embedProgress.total.toLocaleString()} sequences`
+              : 'Checking your dataset and starting measurements…'}
           </div>
           {embedProgress && (
             <div className="progress">
@@ -82,7 +103,7 @@ export function Live({
       <div className="grid chart-grid">
         <div className="card">
           <div className="card-head">
-            <div className="card-title">Best measured fitness vs. budget</div>
+            <div className="card-title">Is the search finding better candidates?</div>
             <div>
               <span className="legend-key">
                 <span className="swatch" style={{ background: '#147d59' }} /> measured
@@ -106,7 +127,7 @@ export function Live({
               ]}
               layout={{
                 xaxis: { title: { text: 'Cumulative measurements' } },
-                yaxis: { title: { text: 'Best measured DMS score' } },
+                yaxis: { title: { text: 'Best measured score' } },
                 showlegend: false,
               }}
             />
@@ -117,8 +138,8 @@ export function Live({
 
         <div className="card">
           <div className="card-head">
-            <div className="card-title">Surrogate accuracy per round</div>
-            <span className="badge">held-out set</span>
+            <div className="card-title">How well is the model learning?</div>
+            <span className="badge">Checked on unseen variants</span>
           </div>
           {rounds.some((r) => r.holdout_spearman != null) ? (
             <Plot
@@ -137,7 +158,7 @@ export function Live({
               ]}
               layout={{
                 xaxis: { title: { text: 'Training measurements' } },
-                yaxis: { title: { text: 'Spearman ρ' } },
+                yaxis: { title: { text: 'Ranking accuracy (−1 to 1)' } },
                 showlegend: false,
               }}
             />
@@ -149,6 +170,7 @@ export function Live({
         </div>
       </div>
 
+      <div className="plain-explanation"><strong>How to read your progress</strong><p>A higher measured score means better performance in this dataset. The first chart tracks your best result so far. The second checks how well the model ranks variants it hasn’t learned from; closer to 1 is better. Neither chart guarantees the next batch will improve.</p></div>
       <RoundPanel rounds={rounds} />
     </div>
   );
@@ -187,33 +209,32 @@ function ControlBar({
     <div className="card">
       <div className="card-head" style={{ marginBottom: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span className={`badge ${badgeClass}`}>{experiment.status}</span>
+          <span className={`badge ${badgeClass}`}>{preparing ? 'Preparing' : done ? 'Complete' : running || busy ? 'Searching' : experiment.status === 'error' ? 'Needs attention' : 'Ready to continue'}</span>
           <strong>{METHOD_LABELS[experiment.acquisition] ?? experiment.acquisition}</strong>
           <span className="note">
-            {experiment.assay_id} · round {experiment.round}/{experiment.n_rounds} ·{' '}
+            Round {experiment.round} of {experiment.n_rounds} ·{' '}
             {experiment.n_measured}/{experiment.budget} measurements
-            {experiment.surrogate_kind && <> · surrogate: {experiment.surrogate_kind}</>}
           </span>
         </div>
         <div className="btn-row">
-          <button className="btn" onClick={onStep} disabled={busy || preparing || running || done}>
-            Step one round
+          <button className="btn" onClick={onStep} disabled={busy || preparing || running || done || experiment.status === 'error'}>
+            Check one batch
           </button>
           {running ? (
             <button className="btn" onClick={onPause}>
-              Pause
+              Pause after this round
             </button>
           ) : (
             <button
               className="btn btn-primary"
               onClick={onRun}
-              disabled={busy || preparing || done}
+              disabled={busy || preparing || done || experiment.status === 'error'}
             >
-              Run to completion
+              Continue search
             </button>
           )}
-          <button className="btn" onClick={onReset} disabled={preparing}>
-            Reset
+          <button className="btn" onClick={onReset} disabled={preparing || running || busy}>
+            Start over
           </button>
         </div>
       </div>
@@ -254,14 +275,14 @@ function StatRow({
   return (
     <div className="stats">
       <div className={`stat ${flash ? 'flash' : ''}`}>
-        <div className="stat-label">Best measured fitness</div>
+        <div className="stat-label">Best score found</div>
         <div className="stat-value measured">
           {experiment.best_measured != null ? experiment.best_measured.toFixed(3) : '—'}
         </div>
         <div className="stat-sub">{experiment.best_mutant ?? 'no variant yet'}</div>
       </div>
       <div className="stat">
-        <div className="stat-label">Measurements spent</div>
+        <div className="stat-label">Variants checked</div>
         <div className="stat-value">{experiment.n_measured}</div>
         <div className="stat-sub">of {experiment.budget} budget</div>
       </div>
@@ -274,21 +295,21 @@ function StatRow({
         <div className="stat-sub">{experiment.pool_size?.toLocaleString()} candidates in pool</div>
       </div>
       <div className="stat">
-        <div className="stat-label">Mean predicted s.d.</div>
+        <div className="stat-label">Model uncertainty</div>
         <div className="stat-value predicted">
           {meanUncertainty != null ? meanUncertainty.toFixed(3) : '—'}
         </div>
         <div className="stat-sub">uncertainty on last batch</div>
       </div>
       <div className="stat">
-        <div className="stat-label">Surrogate ρ (holdout)</div>
+        <div className="stat-label">Ranking accuracy</div>
         <div className="stat-value">
           {latest?.holdout_spearman != null ? latest.holdout_spearman.toFixed(3) : '—'}
         </div>
         <div className="stat-sub">
           {latest?.surrogate_info && 'n_train' in latest.surrogate_info
             ? `trained on ${String(latest.surrogate_info.n_train)}`
-            : 'held-out Spearman'}
+            : 'unseen variants · closer to 1 is better'}
         </div>
       </div>
     </div>
@@ -306,10 +327,9 @@ function RoundPanel({ rounds }: { rounds: RoundRecord[] }) {
   if (!shown) {
     return (
       <div className="card">
-        <div className="card-title">Selected variants</div>
+        <div className="card-title">Your latest candidates</div>
         <div className="empty">
-          Step the loop to see which variants the model chose, what it predicted, and what the
-          real measurement turned out to be.
+          Your candidates will appear after the first round. Each row shows what the model expected and the actual result it revealed.
         </div>
       </div>
     );
@@ -321,7 +341,7 @@ function RoundPanel({ rounds }: { rounds: RoundRecord[] }) {
     <div className="card">
       <div className="card-head">
         <div className="card-title">
-          Round {shown.round} — selected variants and revealed measurements
+          Round {shown.round} — what we expected and what we found
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <span className="legend-key">
@@ -354,11 +374,11 @@ function RoundPanel({ rounds }: { rounds: RoundRecord[] }) {
             <tr>
               <th>Variant</th>
               <th className="num">Position</th>
-              <th className="num">Acquisition</th>
-              <th className="num">Predicted fitness</th>
-              <th className="num">Predicted s.d.</th>
-              <th className="num">Measured fitness</th>
-              <th className="num">Error</th>
+              <th className="num" title="The priority assigned by the search approach; it is not a measured result.">Selection priority</th>
+              <th className="num">Expected score</th>
+              <th className="num">Uncertainty</th>
+              <th className="num">Actual score</th>
+              <th className="num">Difference</th>
             </tr>
           </thead>
           <tbody>
@@ -391,9 +411,9 @@ function RoundPanel({ rounds }: { rounds: RoundRecord[] }) {
       </div>
 
       <div className="note" style={{ marginTop: 12 }}>
-        Predictions were made <em>before</em> these measurements were revealed. After this
-        round the surrogate is retrained on all {shown.n_measured} measurements, which is what
-        changes the next round’s choices.
+        Predictions were made <em>before</em> these measurements were revealed. If you run
+        another round, the model learns from all {shown.n_measured} measurements before
+        choosing the next batch.
         {shown.proposal_report && (
           <>
             {' '}

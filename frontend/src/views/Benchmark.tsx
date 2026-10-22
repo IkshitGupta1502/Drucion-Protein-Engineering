@@ -86,13 +86,14 @@ export function Benchmark() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <div className="plain-explanation"><strong>Which search approach works best?</strong><p>These saved examples compare different ways of choosing variants with the same measurement budget. Higher scores found earlier are better. Results depend on the protein and settings; a guided search won’t always beat random sampling.</p><p className="note">These are example runs, separate from your current search. You can inspect them without starting any computation.</p></div>
       {error && <div className="alert err">{error}</div>}
 
       <div className="card">
         <div className="card-head" style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div className="card-title" style={{ marginBottom: 0 }}>
-              Benchmark results
+              Saved example
             </div>
             {Object.keys(saved).length > 0 && (
               <select
@@ -111,7 +112,7 @@ export function Benchmark() {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label className="note" htmlFor="seeds">
-              seeds
+              Repeat runs
             </label>
             <input
               id="seeds"
@@ -123,7 +124,7 @@ export function Benchmark() {
               style={{ width: 70 }}
             />
             <button className="btn" onClick={startBenchmark} disabled={!!jobId || !Number.isInteger(seeds) || seeds < 1 || seeds > 20}>
-              {jobId ? 'Running…' : 'Run new benchmark'}
+              {jobId ? 'Comparing…' : 'Run a new comparison'}
             </button>
           </div>
         </div>
@@ -144,7 +145,7 @@ export function Benchmark() {
         <div className="card">
           <div className="empty">
             No saved results yet. Run <code>python scripts/run_benchmark.py</code> or press
-            “Run new benchmark”.
+            “Run a new comparison”.
           </div>
         </div>
       ) : (

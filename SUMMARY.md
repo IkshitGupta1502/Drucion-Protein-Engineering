@@ -58,9 +58,10 @@ Everything below was executed, not just written.
 
 ## 3. Results
 
-### 3.1 The headline claim
+### 3.1 The headline claim (one assay of three)
 
-On VIM-2 β-lactamase, 200 measurements (4% of the pool), 10 seeds:
+On VIM-2 β-lactamase — the assay where the surrogate learns best — with 200
+measurements (4% of the pool) over 10 seeds:
 
 - **3.3× enrichment of top-1% variants** — 15.5% found vs. random's 4.7%,
   winning on **all 10 of 10 seeds** (paired Wilcoxon **p = 0.002**).
@@ -77,33 +78,39 @@ On VIM-2 β-lactamase, 200 measurements (4% of the pool), 10 seeds:
 p = 0.32). That statistic is a maximum over a heavy-tailed distribution and is
 dominated by luck at ten seeds. We report it and decline to claim it.
 
-### 3.3 The negative result
+### 3.3 Across three assays — including where we lose
 
-On **TPMT**, active learning shows **no detectable benefit** over random
-selection. UCB scores 1.527 ± 0.126 against random's 1.591 ± 0.194, and the
-ESM-guided evolutionary baseline — which trains nothing — beats both at
-1.655 ± 0.201, matching random's final result with 15% fewer measurements.
+The identical pipeline on three assays produced the most useful finding in the
+project, and it is not "our method always wins":
 
-Paired over the same 10 seeds, none of UCB's differences against random reach
-significance in either direction (best p = 0.73, AUC p = 0.16, top-1%
-p = 0.13). The honest claim is "buys nothing measurable here", not "is worse
-here".
+| Assay | Surrogate ρ (held out) | Random, top-1% | Best guided method | Enrichment |
+|---|---|---|---|---|
+| VIM-2 β-lactamase | 0.561 | 4.7% | **UCB — 15.5%** | 3.3× |
+| TEM-1 β-lactamase | 0.476 | 4.0% | evolutionary — 10.8% | 2.7× |
+| TPMT | 0.350 | 4.1% | evolutionary — 4.6% | 1.1× |
 
-We investigated rather than hiding it. The surrogate's held-out accuracy
-explains it:
+**Model-guided selection beats random exactly to the extent the surrogate can
+rank unseen variants**, monotonically across all three assays.
 
-| Assay | Surrogate Spearman ρ (start → end) | Active learning helps? |
-|---|---|---|
-| VIM-2 β-lactamase | 0.40 → 0.56 | Yes |
-| TPMT | 0.23 → 0.35 | No detectable effect |
+Two results that do not flatter the method, reported because they are true:
 
-**Active-learning benefit tracks surrogate quality.** With a model that cannot
-rank variants there is nothing to steer with, and the loop degenerates into an
-expensive random search. The TPMT runs also show greedy degrading its own model
-hardest (final ρ 0.253 vs random's 0.350) while UCB holds 0.277 — the
-uncertainty term pulling it back toward exploration when the model is
-uninformative. This is the system behaving as a correctly-specified Bayesian
-optimiser should.
+**UCB is not universally best.** It dominates on VIM-2 (p = 0.002). On TEM-1 it
+beats random on top-1% recall (8.5% vs 4.0%, paired p = 0.031) but sits behind
+greedy (10.0%) and the evolutionary baseline (10.8%). On TPMT nothing beats
+random significantly — none of UCB's differences reach significance in either
+direction (best p = 0.73, AUC p = 0.16, top-1% p = 0.13), so the accurate
+phrasing is "buys nothing measurable", not "is worse".
+
+**The non-learning baseline is strong.** ESM-guided evolutionary search trains
+no model, yet is the best method on two of three assays, and matched random's
+final result with 30% fewer measurements on TEM-1 and 15% fewer on TPMT. Our
+trainable surrogate's advantage over a well-built zero-shot ESM baseline is
+established **only on VIM-2**, not in general. Reading this work as "learned
+surrogates beat ESM heuristics" would over-read the evidence.
+
+The TPMT runs do still show the uncertainty term doing its job: greedy degrades
+its own model hardest (final ρ 0.253 vs random's 0.350) while UCB holds 0.277,
+falling back toward exploration when the model is uninformative.
 
 ### 3.4 Supporting findings
 
@@ -161,7 +168,11 @@ representation choice was made once on TPMT then applied unchanged to VIM-2.
 - **Small ESM-2.** The 8M checkpoint was chosen to keep the demo laptop-sized.
 - **Ten seeds.** Adequate for the paired tests reported; not for small
   differences in the maximum.
-- **Two saved assay benchmarks.** The benefit is demonstrably assay-dependent.
+- **Three assays.** The benefit is demonstrably assay-dependent, and on one of
+  the three there is none. Three points is enough to show the surrogate-quality
+  relationship is monotone, not enough to fit it.
+- **No universal winner.** UCB is best on one assay, the non-learning
+  evolutionary baseline on two. We do not claim a best method.
 - **No structural modelling.** BioEmu was deliberately kept out of the critical
   path.
 
