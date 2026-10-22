@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drucion"
+version = "0.1.0"
+description = "Drucion: closed-loop, uncertainty-aware active learning for protein engineering on real ProteinGym measurements"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2",
+    "transformers>=4.40",
+    "botorch>=0.11",
+    "gpytorch>=1.11",
+    "scikit-learn>=1.4",
+    "numpy>=2.0",  # np.trapezoid
+    "pandas>=2.2",
+    "scipy>=1.12",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pyarrow>=15",
+    "matplotlib>=3.8",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["drucion*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

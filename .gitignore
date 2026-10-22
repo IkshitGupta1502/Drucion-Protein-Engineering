@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+node_modules/
+frontend/dist/
+data/proteingym_raw/
+data/cache/
+data/*.sqlite*
+.DS_Store
+
+.pytest_cache/
+*.tsbuildinfo
+results/api/
+.claude/settings.local.json

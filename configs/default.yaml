@@ -1,0 +1,27 @@
+# Default Drucion experiment configuration.
+# Mirrors the dataclasses in backend/drucion/config.py.
+assay_id: A4GRB6_PSEAI_Chen_2020
+pool_size: null            # null = use every measured variant
+
+embedding:
+  featurizer: esm2         # esm2 (site-resolved) | esm2_mean | onehot
+  model_name: facebook/esm2_t6_8M_UR50D
+  device: auto             # auto | cpu | cuda | mps
+  batch_size: 16
+  n_components: 24
+  include_zero_shot: true
+
+surrogate:
+  kind: gp                 # gp | rf
+  allow_fallback: true
+  max_fit_points: 2000
+  jitter: 1.0e-6
+
+loop:
+  n_initial: 50
+  batch_size: 10
+  n_rounds: 15
+  seed: 0
+  acquisition: ucb         # ucb | ei | greedy | random | evolutionary
+  ucb_beta: 2.0
+  diversity_quantile: 0.05

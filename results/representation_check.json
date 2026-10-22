@@ -1,0 +1,56 @@
+{
+  "assay": "TPMT_HUMAN_Matreyek_2018",
+  "n_train": 200,
+  "n_components": 24,
+  "note": "Held-out Spearman for each representation, fit on a random label-free subset and evaluated on the disjoint remainder. This is a one-time modelling decision, made on this assay and then applied unchanged elsewhere; the active-learning benchmark never sees labels outside its budget.",
+  "results": {
+    "esm2": {
+      "spearman_mean": 0.2999,
+      "spearman_std": 0.0252,
+      "rmse_mean": 0.3483,
+      "raw_dim": 640,
+      "n_features": 24,
+      "explained_variance": 0.564
+    },
+    "esm2+zero_shot": {
+      "spearman_mean": 0.3552,
+      "spearman_std": 0.0404,
+      "rmse_mean": 0.3323,
+      "raw_dim": 640,
+      "n_features": 25,
+      "explained_variance": 0.564
+    },
+    "esm2_mean": {
+      "spearman_mean": 0.2605,
+      "spearman_std": 0.0547,
+      "rmse_mean": 0.3503,
+      "raw_dim": 320,
+      "n_features": 24,
+      "explained_variance": 0.821
+    },
+    "esm2_mean+zero_shot": {
+      "spearman_mean": 0.3183,
+      "spearman_std": 0.0721,
+      "rmse_mean": 0.3377,
+      "raw_dim": 320,
+      "n_features": 25,
+      "explained_variance": 0.821
+    },
+    "onehot": {
+      "spearman_mean": -0.0027,
+      "spearman_std": 0.0162,
+      "rmse_mean": 0.3848,
+      "raw_dim": 4820,
+      "n_features": 24,
+      "explained_variance": 0.007
+    },
+    "onehot+zero_shot": {
+      "spearman_mean": 0.1209,
+      "spearman_std": 0.0149,
+      "rmse_mean": 0.3774,
+      "raw_dim": 4820,
+      "n_features": 25,
+      "explained_variance": 0.007
+    }
+  }
+}
