@@ -1,0 +1,1034 @@
+{
+  "assay": "TPMT_HUMAN_Matreyek_2018",
+  "n_train": 200,
+  "n_components": 24,
+  "note": "Held-out Spearman for each representation, fit on a random label-free subset and evaluated on the disjoint remainder. This is a one-time modelling decision, made on this assay and then applied unchanged elsewhere; the active-learning benchmark never sees labels outside its budget.",
+  "results": {
+    "esm2": {
+      "spearman_mean": 0.2998,
+      "spearman_std": 0.0252,
+      "rmse_mean": 0.3483,
+      "raw_dim": 640,
+      "n_features": 24,
+      "explained_variance": 0.564
+    },
+    "esm2+zero_shot": {
+      "spearman_mean": 0.355,
+      "spearman_std": 0.0406,
+      "rmse_mean": 0.3324,
+      "raw_dim": 640,
+      "n_features": 25,
+      "explained_variance": 0.564
+    },
+    "esm2+zero_shot+agent": {
+      "spearman_mean": 0.4241,
+      "spearman_std": 0.0133,
+      "rmse_mean": 0.3146,
+      "raw_dim": 640,
+      "n_features": 26,
+      "explained_variance": 0.564,
+      "agent_prior": {
+        "assay_id": "TPMT_HUMAN_Matreyek_2018",
+        "model": "gemini-3.8-flash",
+        "blind": false,
+        "critical_positions": [
+          {
+            "position": 80,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Buried beta-strand core residue; proline substitution (TPMT*2) disrupts backbone and severely destabilizes fold"
+          },
+          {
+            "position": 154,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Tightly packed hydrophobic core residue; polar mutations like A154T (TPMT*3B/3A) trigger proteasomal degradation"
+          },
+          {
+            "position": 240,
+            "wt_aa": "Y",
+            "tolerance": "none",
+            "reason": "C-terminal aromatic anchor packing against core; Y240C (TPMT*3C/3A) destabilizes the tertiary fold"
+          },
+          {
+            "position": 150,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Buried aromatic core residue essential for packing stability"
+          },
+          {
+            "position": 29,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core anchor in the N-terminal subdomain"
+          },
+          {
+            "position": 33,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue critical for domain packing"
+          },
+          {
+            "position": 66,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue within central beta-sheet region"
+          },
+          {
+            "position": 67,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried phenylalanine stabilizing the local hydrophobic cluster"
+          },
+          {
+            "position": 68,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid turn residue directing chain into core strand"
+          },
+          {
+            "position": 78,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Deeply buried bulky aromatic residue stabilizing the central fold"
+          },
+          {
+            "position": 79,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding critical Ala80"
+          },
+          {
+            "position": 99,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue maintaining structural integrity of the sheet"
+          },
+          {
+            "position": 100,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue contributing to hydrophobic stability"
+          },
+          {
+            "position": 131,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved core aromatic stabilizing central beta-barrel/sheet region"
+          },
+          {
+            "position": 155,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Internal hydrophobic packing residue adjacent to Ala154"
+          },
+          {
+            "position": 156,
+            "wt_aa": "V",
+            "tolerance": "partial",
+            "reason": "Buried aliphatic residue contributing to the main hydrophobic core"
+          },
+          {
+            "position": 166,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue maintaining regional fold stability"
+          },
+          {
+            "position": 171,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue critical for helix packing"
+          },
+          {
+            "position": 174,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine contributing to helical bundle stability"
+          },
+          {
+            "position": 178,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue whose disruption promotes misfolding"
+          },
+          {
+            "position": 180,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue packing in the hydrophobic core"
+          },
+          {
+            "position": 181,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried hydrophobic residue stabilizing central tertiary contacts"
+          },
+          {
+            "position": 182,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Core aliphatic residue crucial for conformational stability"
+          },
+          {
+            "position": 195,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid proline in loop region required for proper folding trajectory"
+          },
+          {
+            "position": 196,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Tandem proline restricting loop conformational entropy"
+          },
+          {
+            "position": 197,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue packing against core from a loop region"
+          },
+          {
+            "position": 207,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine in alpha-helix stabilizing fold"
+          },
+          {
+            "position": 208,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue embedded within helix-helix packing interface"
+          },
+          {
+            "position": 216,
+            "wt_aa": "C",
+            "tolerance": "partial",
+            "reason": "Conserved buried cysteine; polar or bulky mutations perturb packing"
+          },
+          {
+            "position": 230,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Bulky aromatic residue anchoring the C-terminal helical region"
+          },
+          {
+            "position": 235,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal core hydrophobic residue"
+          },
+          {
+            "position": 236,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding C-terminal strand"
+          },
+          {
+            "position": 241,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal hydrophobic residue stabilizing the fold terminus"
+          },
+          {
+            "position": 242,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Terminal hydrophobic anchor preventing end-unraveling and degradation"
+          }
+        ],
+        "substitution_rules": [
+          {
+            "from_class": "hydrophobic",
+            "to_class": "charged",
+            "effect": "strongly_deleterious",
+            "reason": "Introducing charged residues into the buried hydrophobic core causes severe destabilization and degradation"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "polar",
+            "effect": "deleterious",
+            "reason": "Introducing uncompensated polar groups into the hydrophobic interior compromises packing efficiency"
+          },
+          {
+            "from_class": "aromatic",
+            "to_class": "small",
+            "effect": "strongly_deleterious",
+            "reason": "Truncation of buried aromatics creates internal cavities and destabilizes the fold"
+          },
+          {
+            "from_class": "any",
+            "to_class": "proline",
+            "effect": "deleterious",
+            "reason": "Introduction of proline into helices or beta-strands introduces steric clash and breaks hydrogen bonding"
+          },
+          {
+            "from_class": "glycine",
+            "to_class": "hydrophobic",
+            "effect": "deleterious",
+            "reason": "Introducing side chains at tight turns or conserved glycine positions causes steric hindrance"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "hydrophobic",
+            "effect": "neutral",
+            "reason": "Conservative hydrophobic substitutions in core regions are often well tolerated if volume matches"
+          },
+          {
+            "from_class": "polar",
+            "to_class": "polar",
+            "effect": "neutral",
+            "reason": "Conservative polar substitutions on solvent-exposed surfaces generally preserve stability"
+          },
+          {
+            "from_class": "charged",
+            "to_class": "charged",
+            "effect": "neutral",
+            "reason": "Charge-preserving substitutions at the protein surface rarely perturb global fold stability"
+          }
+        ],
+        "notes": "TPMT cellular abundance is highly sensitive to misfolding and rapid proteasomal clearance, driven primarily by perturbations to its hydrophobic core and known destabilizing clinical variant sites (e.g., A80P, A154T, Y240C). Buried aromatics, tightly packed aliphatics, and secondary-structure-defining residues are the primary determinants of abundance.",
+        "validation": {
+          "positions_proposed": 35,
+          "dropped_out_of_range": 0,
+          "dropped_wt_mismatch": 1,
+          "dropped_bad_tolerance": 0,
+          "dropped_malformed": 0,
+          "dropped_duplicate": 0,
+          "positions_kept": 34,
+          "wt_match_rate": 0.9714,
+          "rules_proposed": 8,
+          "dropped_bad_rule": 0,
+          "rules_kept": 8
+        },
+        "mode": "agent"
+      }
+    },
+    "esm2+zero_shot+agent_shuffled": {
+      "spearman_mean": 0.3111,
+      "spearman_std": 0.0545,
+      "rmse_mean": 0.3499,
+      "raw_dim": 640,
+      "n_features": 26,
+      "explained_variance": 0.564,
+      "agent_prior": {
+        "assay_id": "TPMT_HUMAN_Matreyek_2018",
+        "model": "gemini-3.8-flash",
+        "blind": false,
+        "critical_positions": [
+          {
+            "position": 80,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Buried beta-strand core residue; proline substitution (TPMT*2) disrupts backbone and severely destabilizes fold"
+          },
+          {
+            "position": 154,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Tightly packed hydrophobic core residue; polar mutations like A154T (TPMT*3B/3A) trigger proteasomal degradation"
+          },
+          {
+            "position": 240,
+            "wt_aa": "Y",
+            "tolerance": "none",
+            "reason": "C-terminal aromatic anchor packing against core; Y240C (TPMT*3C/3A) destabilizes the tertiary fold"
+          },
+          {
+            "position": 150,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Buried aromatic core residue essential for packing stability"
+          },
+          {
+            "position": 29,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core anchor in the N-terminal subdomain"
+          },
+          {
+            "position": 33,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue critical for domain packing"
+          },
+          {
+            "position": 66,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue within central beta-sheet region"
+          },
+          {
+            "position": 67,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried phenylalanine stabilizing the local hydrophobic cluster"
+          },
+          {
+            "position": 68,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid turn residue directing chain into core strand"
+          },
+          {
+            "position": 78,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Deeply buried bulky aromatic residue stabilizing the central fold"
+          },
+          {
+            "position": 79,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding critical Ala80"
+          },
+          {
+            "position": 99,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue maintaining structural integrity of the sheet"
+          },
+          {
+            "position": 100,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue contributing to hydrophobic stability"
+          },
+          {
+            "position": 131,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved core aromatic stabilizing central beta-barrel/sheet region"
+          },
+          {
+            "position": 155,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Internal hydrophobic packing residue adjacent to Ala154"
+          },
+          {
+            "position": 156,
+            "wt_aa": "V",
+            "tolerance": "partial",
+            "reason": "Buried aliphatic residue contributing to the main hydrophobic core"
+          },
+          {
+            "position": 166,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue maintaining regional fold stability"
+          },
+          {
+            "position": 171,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue critical for helix packing"
+          },
+          {
+            "position": 174,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine contributing to helical bundle stability"
+          },
+          {
+            "position": 178,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue whose disruption promotes misfolding"
+          },
+          {
+            "position": 180,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue packing in the hydrophobic core"
+          },
+          {
+            "position": 181,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried hydrophobic residue stabilizing central tertiary contacts"
+          },
+          {
+            "position": 182,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Core aliphatic residue crucial for conformational stability"
+          },
+          {
+            "position": 195,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid proline in loop region required for proper folding trajectory"
+          },
+          {
+            "position": 196,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Tandem proline restricting loop conformational entropy"
+          },
+          {
+            "position": 197,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue packing against core from a loop region"
+          },
+          {
+            "position": 207,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine in alpha-helix stabilizing fold"
+          },
+          {
+            "position": 208,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue embedded within helix-helix packing interface"
+          },
+          {
+            "position": 216,
+            "wt_aa": "C",
+            "tolerance": "partial",
+            "reason": "Conserved buried cysteine; polar or bulky mutations perturb packing"
+          },
+          {
+            "position": 230,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Bulky aromatic residue anchoring the C-terminal helical region"
+          },
+          {
+            "position": 235,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal core hydrophobic residue"
+          },
+          {
+            "position": 236,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding C-terminal strand"
+          },
+          {
+            "position": 241,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal hydrophobic residue stabilizing the fold terminus"
+          },
+          {
+            "position": 242,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Terminal hydrophobic anchor preventing end-unraveling and degradation"
+          }
+        ],
+        "substitution_rules": [
+          {
+            "from_class": "hydrophobic",
+            "to_class": "charged",
+            "effect": "strongly_deleterious",
+            "reason": "Introducing charged residues into the buried hydrophobic core causes severe destabilization and degradation"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "polar",
+            "effect": "deleterious",
+            "reason": "Introducing uncompensated polar groups into the hydrophobic interior compromises packing efficiency"
+          },
+          {
+            "from_class": "aromatic",
+            "to_class": "small",
+            "effect": "strongly_deleterious",
+            "reason": "Truncation of buried aromatics creates internal cavities and destabilizes the fold"
+          },
+          {
+            "from_class": "any",
+            "to_class": "proline",
+            "effect": "deleterious",
+            "reason": "Introduction of proline into helices or beta-strands introduces steric clash and breaks hydrogen bonding"
+          },
+          {
+            "from_class": "glycine",
+            "to_class": "hydrophobic",
+            "effect": "deleterious",
+            "reason": "Introducing side chains at tight turns or conserved glycine positions causes steric hindrance"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "hydrophobic",
+            "effect": "neutral",
+            "reason": "Conservative hydrophobic substitutions in core regions are often well tolerated if volume matches"
+          },
+          {
+            "from_class": "polar",
+            "to_class": "polar",
+            "effect": "neutral",
+            "reason": "Conservative polar substitutions on solvent-exposed surfaces generally preserve stability"
+          },
+          {
+            "from_class": "charged",
+            "to_class": "charged",
+            "effect": "neutral",
+            "reason": "Charge-preserving substitutions at the protein surface rarely perturb global fold stability"
+          }
+        ],
+        "notes": "TPMT cellular abundance is highly sensitive to misfolding and rapid proteasomal clearance, driven primarily by perturbations to its hydrophobic core and known destabilizing clinical variant sites (e.g., A80P, A154T, Y240C). Buried aromatics, tightly packed aliphatics, and secondary-structure-defining residues are the primary determinants of abundance.",
+        "validation": {
+          "positions_proposed": 35,
+          "dropped_out_of_range": 0,
+          "dropped_wt_mismatch": 1,
+          "dropped_bad_tolerance": 0,
+          "dropped_malformed": 0,
+          "dropped_duplicate": 0,
+          "positions_kept": 34,
+          "wt_match_rate": 0.9714,
+          "rules_proposed": 8,
+          "dropped_bad_rule": 0,
+          "rules_kept": 8
+        },
+        "mode": "shuffled"
+      }
+    },
+    "esm2+zero_shot+agent_random_positions": {
+      "spearman_mean": 0.3527,
+      "spearman_std": 0.0259,
+      "rmse_mean": 0.3329,
+      "raw_dim": 640,
+      "n_features": 26,
+      "explained_variance": 0.564,
+      "agent_prior": {
+        "assay_id": "TPMT_HUMAN_Matreyek_2018",
+        "model": "gemini-3.8-flash",
+        "blind": false,
+        "critical_positions": [
+          {
+            "position": 80,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Buried beta-strand core residue; proline substitution (TPMT*2) disrupts backbone and severely destabilizes fold"
+          },
+          {
+            "position": 154,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Tightly packed hydrophobic core residue; polar mutations like A154T (TPMT*3B/3A) trigger proteasomal degradation"
+          },
+          {
+            "position": 240,
+            "wt_aa": "Y",
+            "tolerance": "none",
+            "reason": "C-terminal aromatic anchor packing against core; Y240C (TPMT*3C/3A) destabilizes the tertiary fold"
+          },
+          {
+            "position": 150,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Buried aromatic core residue essential for packing stability"
+          },
+          {
+            "position": 29,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core anchor in the N-terminal subdomain"
+          },
+          {
+            "position": 33,
+            "wt_aa": "W",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue critical for domain packing"
+          },
+          {
+            "position": 66,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue within central beta-sheet region"
+          },
+          {
+            "position": 67,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried phenylalanine stabilizing the local hydrophobic cluster"
+          },
+          {
+            "position": 68,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid turn residue directing chain into core strand"
+          },
+          {
+            "position": 78,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Deeply buried bulky aromatic residue stabilizing the central fold"
+          },
+          {
+            "position": 79,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding critical Ala80"
+          },
+          {
+            "position": 99,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue maintaining structural integrity of the sheet"
+          },
+          {
+            "position": 100,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue contributing to hydrophobic stability"
+          },
+          {
+            "position": 131,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved core aromatic stabilizing central beta-barrel/sheet region"
+          },
+          {
+            "position": 155,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Internal hydrophobic packing residue adjacent to Ala154"
+          },
+          {
+            "position": 156,
+            "wt_aa": "V",
+            "tolerance": "partial",
+            "reason": "Buried aliphatic residue contributing to the main hydrophobic core"
+          },
+          {
+            "position": 166,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Buried aromatic residue maintaining regional fold stability"
+          },
+          {
+            "position": 171,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic core residue critical for helix packing"
+          },
+          {
+            "position": 174,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine contributing to helical bundle stability"
+          },
+          {
+            "position": 178,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic core residue whose disruption promotes misfolding"
+          },
+          {
+            "position": 180,
+            "wt_aa": "Y",
+            "tolerance": "partial",
+            "reason": "Conserved aromatic residue packing in the hydrophobic core"
+          },
+          {
+            "position": 181,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried hydrophobic residue stabilizing central tertiary contacts"
+          },
+          {
+            "position": 182,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Core aliphatic residue crucial for conformational stability"
+          },
+          {
+            "position": 195,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Rigid proline in loop region required for proper folding trajectory"
+          },
+          {
+            "position": 196,
+            "wt_aa": "P",
+            "tolerance": "partial",
+            "reason": "Tandem proline restricting loop conformational entropy"
+          },
+          {
+            "position": 197,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue packing against core from a loop region"
+          },
+          {
+            "position": 207,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Buried leucine in alpha-helix stabilizing fold"
+          },
+          {
+            "position": 208,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic residue embedded within helix-helix packing interface"
+          },
+          {
+            "position": 216,
+            "wt_aa": "C",
+            "tolerance": "partial",
+            "reason": "Conserved buried cysteine; polar or bulky mutations perturb packing"
+          },
+          {
+            "position": 230,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Bulky aromatic residue anchoring the C-terminal helical region"
+          },
+          {
+            "position": 235,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal core hydrophobic residue"
+          },
+          {
+            "position": 236,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue preceding C-terminal strand"
+          },
+          {
+            "position": 241,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "C-terminal hydrophobic residue stabilizing the fold terminus"
+          },
+          {
+            "position": 242,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Terminal hydrophobic anchor preventing end-unraveling and degradation"
+          }
+        ],
+        "substitution_rules": [
+          {
+            "from_class": "hydrophobic",
+            "to_class": "charged",
+            "effect": "strongly_deleterious",
+            "reason": "Introducing charged residues into the buried hydrophobic core causes severe destabilization and degradation"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "polar",
+            "effect": "deleterious",
+            "reason": "Introducing uncompensated polar groups into the hydrophobic interior compromises packing efficiency"
+          },
+          {
+            "from_class": "aromatic",
+            "to_class": "small",
+            "effect": "strongly_deleterious",
+            "reason": "Truncation of buried aromatics creates internal cavities and destabilizes the fold"
+          },
+          {
+            "from_class": "any",
+            "to_class": "proline",
+            "effect": "deleterious",
+            "reason": "Introduction of proline into helices or beta-strands introduces steric clash and breaks hydrogen bonding"
+          },
+          {
+            "from_class": "glycine",
+            "to_class": "hydrophobic",
+            "effect": "deleterious",
+            "reason": "Introducing side chains at tight turns or conserved glycine positions causes steric hindrance"
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "hydrophobic",
+            "effect": "neutral",
+            "reason": "Conservative hydrophobic substitutions in core regions are often well tolerated if volume matches"
+          },
+          {
+            "from_class": "polar",
+            "to_class": "polar",
+            "effect": "neutral",
+            "reason": "Conservative polar substitutions on solvent-exposed surfaces generally preserve stability"
+          },
+          {
+            "from_class": "charged",
+            "to_class": "charged",
+            "effect": "neutral",
+            "reason": "Charge-preserving substitutions at the protein surface rarely perturb global fold stability"
+          }
+        ],
+        "notes": "TPMT cellular abundance is highly sensitive to misfolding and rapid proteasomal clearance, driven primarily by perturbations to its hydrophobic core and known destabilizing clinical variant sites (e.g., A80P, A154T, Y240C). Buried aromatics, tightly packed aliphatics, and secondary-structure-defining residues are the primary determinants of abundance.",
+        "validation": {
+          "positions_proposed": 35,
+          "dropped_out_of_range": 0,
+          "dropped_wt_mismatch": 1,
+          "dropped_bad_tolerance": 0,
+          "dropped_malformed": 0,
+          "dropped_duplicate": 0,
+          "positions_kept": 34,
+          "wt_match_rate": 0.9714,
+          "rules_proposed": 8,
+          "dropped_bad_rule": 0,
+          "rules_kept": 8
+        },
+        "mode": "random_positions"
+      }
+    },
+    "esm2+zero_shot+agent_blind": {
+      "spearman_mean": 0.4119,
+      "spearman_std": 0.0156,
+      "rmse_mean": 0.317,
+      "raw_dim": 640,
+      "n_features": 26,
+      "explained_variance": 0.564,
+      "agent_prior": {
+        "assay_id": "TPMT_HUMAN_Matreyek_2018",
+        "model": "gemini-3.8-flash",
+        "blind": true,
+        "critical_positions": [
+          {
+            "position": 78,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Buried bulky aromatic residue essential for core hydrophobic packing and structural integrity."
+          },
+          {
+            "position": 79,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Core hydrophobic residue contributing to the stability of the central fold."
+          },
+          {
+            "position": 80,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Critical helix residue where disruption (e.g., A80P) severely impairs folding and causes rapid degradation."
+          },
+          {
+            "position": 147,
+            "wt_aa": "D",
+            "tolerance": "partial",
+            "reason": "Conserved core-proximal polar residue involved in hydrogen bonding and active site architecture."
+          },
+          {
+            "position": 150,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Buried tryptophan residue indispensable for hydrophobic core packing."
+          },
+          {
+            "position": 154,
+            "wt_aa": "A",
+            "tolerance": "none",
+            "reason": "Known destabilization hotspot where mutation drastically reduces intracellular protein abundance."
+          },
+          {
+            "position": 155,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Hydrophobic beta-sheet core residue required for fold stability."
+          },
+          {
+            "position": 217,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Internal hydrophobic packing residue stabilizing the tertiary fold."
+          },
+          {
+            "position": 223,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Aromatic side chain buried within the C-terminal subdomain."
+          },
+          {
+            "position": 230,
+            "wt_aa": "W",
+            "tolerance": "none",
+            "reason": "Highly conserved buried aromatic residue stabilizing the C-terminal helical region."
+          },
+          {
+            "position": 236,
+            "wt_aa": "F",
+            "tolerance": "partial",
+            "reason": "Hydrophobic packing residue anchoring the terminal helix to the main domain."
+          },
+          {
+            "position": 240,
+            "wt_aa": "Y",
+            "tolerance": "none",
+            "reason": "Key structural anchor at the C-terminus where mutation triggers misfolding and rapid proteasomal degradation."
+          },
+          {
+            "position": 241,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Hydrophobic C-terminal residue required for proper terminal packing."
+          },
+          {
+            "position": 242,
+            "wt_aa": "L",
+            "tolerance": "partial",
+            "reason": "Hydrophobic residue maintaining C-terminal structural compaction."
+          }
+        ],
+        "substitution_rules": [
+          {
+            "from_class": "hydrophobic",
+            "to_class": "charged",
+            "effect": "strongly_deleterious",
+            "reason": "Introducing charged residues into the buried hydrophobic core disrupts packing and drives misfolding."
+          },
+          {
+            "from_class": "aromatic",
+            "to_class": "small",
+            "effect": "strongly_deleterious",
+            "reason": "Loss of large hydrophobic volume leaves packing cavities that destabilize the protein fold."
+          },
+          {
+            "from_class": "any",
+            "to_class": "proline",
+            "effect": "deleterious",
+            "reason": "Proline introduction breaks backbone hydrogen bonding in alpha helices and beta strands, triggering degradation."
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "polar",
+            "effect": "deleterious",
+            "reason": "Unsatisfied polar groups within the hydrophobic interior significantly reduce thermodynamic stability."
+          },
+          {
+            "from_class": "hydrophobic",
+            "to_class": "hydrophobic",
+            "effect": "neutral",
+            "reason": "Conservative hydrophobic substitutions generally preserve core packing and steady-state abundance."
+          },
+          {
+            "from_class": "polar",
+            "to_class": "polar",
+            "effect": "neutral",
+            "reason": "Surface polar substitutions are well tolerated and rarely impact global protein stability."
+          },
+          {
+            "from_class": "glycine",
+            "to_class": "aromatic",
+            "effect": "deleterious",
+            "reason": "Steric clashes in tight loop turns and packing junctions compromise the native state."
+          }
+        ],
+        "notes": "In cellular abundance assays readout via GFP fusion, mutations that destabilize thermodynamic folding lead to rapid intracellular clearance. Consequently, core hydrophobic residues and structurally sensitive positions (such as A80, A154, and Y240 in TPMT) are especially intolerant to disruptive substitutions.",
+        "validation": {
+          "positions_proposed": 14,
+          "dropped_out_of_range": 0,
+          "dropped_wt_mismatch": 0,
+          "dropped_bad_tolerance": 0,
+          "dropped_malformed": 0,
+          "dropped_duplicate": 0,
+          "positions_kept": 14,
+          "wt_match_rate": 1.0,
+          "rules_proposed": 7,
+          "dropped_bad_rule": 0,
+          "rules_kept": 7
+        },
+        "mode": "agent"
+      }
+    }
+  }
+}

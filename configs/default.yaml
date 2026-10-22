@@ -10,6 +10,10 @@ embedding:
   batch_size: 16
   n_components: 24
   include_zero_shot: true
+  include_agent_prior: false   # needs a Gemini key in .env; see .env.example
+  agent_prior_model: gemini-3.8-flash
+  agent_prior_blind: true      # withhold protein identity: reasoning, not recall
+  agent_prior_mode: agent      # agent | shuffled | random_positions (ablations)
 
 surrogate:
   kind: gp                 # gp | rf

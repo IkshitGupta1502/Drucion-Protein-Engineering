@@ -97,7 +97,9 @@ def run_benchmark(
 
     # --- shared, label-free setup -------------------------------------
     base_assay = load_assay(config.assay_id, pool_size=config.pool_size)
-    features = build_features(base_assay.pool, config.embedding)
+    features = build_features(
+        base_assay.pool, config.embedding, metadata=base_assay.metadata
+    )
     pool_stats = base_assay.oracle.ground_truth_summary()
     top1 = base_assay.oracle.top_quantile_indices(0.99)
     top10 = base_assay.oracle.top_quantile_indices(0.90)
