@@ -219,7 +219,8 @@ python3.11 -m venv .venv
 ```
 
 `download_data.py` fetches ProteinGym v1.3 (43 MB compressed, ~1 GB expanded,
-217 assays).
+217 assays) plus the AlphaFold2 wild-type structures used by the 3D explorer
+(19 MB; pass `--skip-structures` to omit them).
 
 Build the dashboard and start the server:
 
@@ -390,7 +391,10 @@ Four views, all driven by the live API:
   bands, the efficiency comparison, the full metrics table, the seed-paired
   significance table, and the surrogate-accuracy curves. Reads saved results
   instantly or launches a new benchmark.
-- **Protein explorer** — wild type vs. best discovered sequence with
+- **Protein explorer** — a 3D view of the wild-type fold with every probed
+  residue marked and coloured by its real measured fitness, scrubbable and
+  replayable round by round so you watch the search sweep across the protein;
+  plus wild type vs. best discovered sequence with
   substitutions highlighted, predicted-vs-measured scatter coloured by round,
   and which residue positions the search concentrated on.
 
@@ -433,6 +437,7 @@ results/                 # benchmark CSV/JSON/PNG (committed)
 |---|---|
 | `GET /api/assays` | All locally available ProteinGym assays |
 | `GET /api/assays/{id}?full=true` | Metadata, provenance, validation report, pool stats |
+| `GET /api/assays/{id}/structure` | Wild-type PDB for the 3D view, refused on residue-numbering mismatch |
 | `POST /api/experiments` | Create an experiment (features computed in background) |
 | `GET /api/experiments/{id}` | Current state |
 | `POST /api/experiments/{id}/step` | Run exactly one round |
@@ -500,7 +505,11 @@ would be an optional extension, not a dependency.
   are not enough to fit it.
 - **No universal winner.** UCB is best on VIM-2, the evolutionary baseline on
   TEM-1 and TPMT. At 10 seeds we do not claim a best method.
-- **No structure.** 3D visualisation and structure-aware features are unbuilt.
+- **Structure is for orientation, not prediction.** The 3D view places real
+  measurements on the published AlphaFold2 model of the *wild type*. There is
+  no mutant structure in the dataset, a single substitution does not visibly
+  move a backbone, and nothing here predicts structural consequence. The
+  backbone deliberately never morphs as you scrub.
 - **The LLM prior is tested on one assay.** Its +0.057 ρ on TPMT comes from a
   single prior draw at temperature 0 on a single assay, scored over 3 seeds.
   VIM-2 and TEM-1 have not been run. The benchmark result that follows from it
@@ -510,8 +519,9 @@ would be an optional extension, not a dependency.
 
 ## What is not finished
 
-- 3Dmol.js structure view in the Protein Explorer (the view currently shows
-  sequence-level and position-level analysis only).
+- Structure-aware *features* (the surrogate still sees only sequence-derived
+  ESM-2 features; spatial proximity of successful mutations is visible in the
+  3D view but not fed back into the model).
 - Larger ESM-2 checkpoints are configurable but have not been benchmarked.
 - The benchmark runs methods sequentially; parallelising across seeds would cut
   wall time roughly fivefold.

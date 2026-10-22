@@ -14,7 +14,12 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 
 from ..config import REPO_ROOT, RESULTS_DIR, EmbeddingConfig, ExperimentConfig
@@ -23,6 +28,12 @@ from ..data.proteingym import (
     list_assays,
     load_assay,
     load_assay_metadata,
+)
+from ..data.structures import (
+    StructureMisaligned,
+    StructureUnavailable,
+    has_structure,
+    load_structure,
 )
 from .schemas import (
     AssayDetail,
@@ -113,7 +124,40 @@ def get_assay(assay_id: str, full: bool = False) -> dict:
         out["validation"] = assay.validation
         out["pool_size"] = len(assay.pool)
         out["pool_stats"] = assay.oracle.ground_truth_summary()
+    out["has_structure"] = has_structure(meta.uniprot_id)
     return out
+
+
+@app.get("/api/assays/{assay_id}/structure")
+def get_assay_structure(assay_id: str) -> Response:
+    """Wild-type PDB structure for the 3D explorer.
+
+    This is the published AlphaFold2 model for the target protein, served
+    verbatim. There is no structure for any mutant — a single substitution
+    does not visibly change a backbone, so the explorer marks mutated
+    positions on the wild-type fold rather than inventing mutant geometry.
+
+    The endpoint refuses (409) if the structure's residue numbering does not
+    match the assay's wild-type sequence, since highlighting position N on a
+    structure whose residue N is a different amino acid would mislead.
+    """
+    try:
+        structure = load_structure(assay_id)
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown assay: {assay_id}") from exc
+    except StructureUnavailable as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except StructureMisaligned as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return Response(
+        content=structure.pdb_text,
+        media_type="chemical/x-pdb",
+        headers={
+            "X-Structure-Source": structure.source,
+            "X-Structure-Residues": str(structure.n_residues),
+            "Cache-Control": "public, max-age=86400",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

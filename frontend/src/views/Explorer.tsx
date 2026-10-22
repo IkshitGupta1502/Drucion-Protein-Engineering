@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { METHOD_LABELS, type ExperimentResults } from '../api';
 import { Plot } from '../components/Plot';
+import { Structure3D } from '../components/Structure3D';
 
 export function Explorer({ results, onSetup }: { results: ExperimentResults | null; onSetup: () => void }) {
   if (!results || !results.wild_type || !results.best_sequence) {
@@ -19,6 +20,8 @@ export function Explorer({ results, onSetup }: { results: ExperimentResults | nu
     <div className="grid" style={{ gap: 16 }}>
       <div className="result-intro"><span className="eyebrow">{results.status === 'done' ? 'SEARCH COMPLETE' : 'RESULTS SO FAR'}</span><h2>{results.best_mutant ? `Your best candidate: ${results.best_mutant}` : 'Your candidates are on the way'}</h2><p>This is the highest-scoring variant found in your search so far. Its score comes from a published measurement, not a model prediction. Compare it with the original protein below.</p><button className="text-button" onClick={onSetup}>Start another search →</button></div>
       <BestVariant results={results} />
+
+      <Structure3D results={results} />
 
       <div className="grid chart-grid">
         <PredictionVsMeasurement results={results} />

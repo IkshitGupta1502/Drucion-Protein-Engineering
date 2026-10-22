@@ -47,6 +47,8 @@ class AssayDetail(BaseModel):
     #: Pool-level score statistics. Shown so users can see the achievable
     #: range; the optimizer never receives these.
     pool_stats: dict[str, float] | None = None
+    #: Whether a verified wild-type structure is available for the 3D explorer.
+    has_structure: bool = False
 
 
 class LoopSettings(BaseModel):

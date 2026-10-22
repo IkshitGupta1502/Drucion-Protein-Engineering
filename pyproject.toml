@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Drucion: closed-loop, uncertainty-aware active learning for protein engineering on real ProteinGym measurements"
 requires-python = ">=3.11"
 dependencies = [
+    "certifi>=2024.2.2",
     "torch>=2.2",
     "transformers>=4.40",
     "botorch>=0.11",

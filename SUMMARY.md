@@ -180,8 +180,10 @@ representation choice was made once on TPMT then applied unchanged to VIM-2.
 
 ## 6. What remains incomplete
 
-- **3Dmol.js structure view** in the Protein Explorer. The view ships with
-  sequence-level and position-level analysis instead.
+- **Structure-aware features.** The 3D explorer shows where the search looked
+  on the real wild-type fold, but the surrogate itself still sees only
+  sequence-derived ESM-2 features — spatial proximity between successful
+  mutations is visible to the eye and not fed back into the model.
 - **Larger ESM-2 checkpoints** are configurable but unbenchmarked. Per the
   mechanism in §3.3, a better representation should *increase* the
   active-learning advantage — the most valuable next experiment.

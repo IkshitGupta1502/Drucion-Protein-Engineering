@@ -401,7 +401,9 @@ def call_gemini(
     last_error: Exception | None = None
     for attempt in range(max_attempts):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            from ..http import verified_ssl_context
+
+            with urllib.request.urlopen(req, timeout=timeout, context=verified_ssl_context()) as resp:
                 payload = json.loads(resp.read().decode())
             break
         except urllib.error.HTTPError as exc:

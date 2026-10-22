@@ -304,7 +304,9 @@ def fetch_uniprot(
     query = urllib.parse.quote(f"id:{entry_name}")
     url = f"{_SEARCH_URL}?query={query}&format=json&size=1"
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
+        from ..http import verified_ssl_context
+
+        with urllib.request.urlopen(url, timeout=timeout, context=verified_ssl_context()) as resp:
             payload = json.loads(resp.read().decode())
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         raise UniProtError(f"UniProt lookup failed for {entry_name}: {exc}") from exc

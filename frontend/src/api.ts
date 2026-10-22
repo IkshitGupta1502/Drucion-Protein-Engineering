@@ -27,6 +27,7 @@ export interface AssayDetail extends Omit<AssaySummary, 'available'> {
   validation?: Record<string, number>;
   pool_size?: number;
   pool_stats?: Record<string, number>;
+  has_structure?: boolean;
 }
 
 export interface Variant {
@@ -185,6 +186,7 @@ export const api = {
     request<{ benchmarks: Record<string, BenchmarkPayload> }>('/api/results/precomputed'),
 
   streamUrl: (id: string) => `${BASE}/api/experiments/${id}/stream`,
+  structureUrl: (assayId: string) => `${BASE}/api/assays/${assayId}/structure`,
 };
 
 export const METHOD_LABELS: Record<string, string> = {

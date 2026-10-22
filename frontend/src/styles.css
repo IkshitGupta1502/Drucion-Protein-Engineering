@@ -210,3 +210,91 @@ td.measured { font-weight: 600; }
 @media (max-width: 1200px) { .onboarding-grid { gap: 24px; grid-template-columns: minmax(0,1fr) minmax(330px,1fr); } .start-card { padding: 22px; } }
 @media (max-width: 1050px) { .onboarding-grid { grid-template-columns: 1fr; } .welcome-panel > h2 br { display: none; } .welcome-panel > h2 { max-width: 23ch; } .journey-list { gap: 18px; } .welcome-copy,.journey-list p { max-width: none; } }
 @media (max-width: 700px) { .search-guide { padding: 20px; } .resume-banner { align-items: flex-start; flex-direction: column; } .search-stages { gap: 14px; } .dataset-details > summary span { display: none; } .plan-options { gap: 8px; } .start-card { padding: 20px; } .start-card .card-head .badge { display: none; } .welcome-panel { padding-top: 0; } .onboarding-grid { gap: 18px; } }
+
+/* ── 3D structure explorer ───────────────────────────────────────── */
+
+.structure-stage {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.structure-viewer {
+  position: absolute;
+  inset: 0;
+}
+
+/* 3Dmol injects an absolutely positioned canvas; keep it inside the card. */
+.structure-viewer canvas {
+  border-radius: var(--radius-sm);
+}
+
+.structure-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--bg) 75%, transparent);
+  color: var(--text-dim);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.structure-readout {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-elev) 88%, transparent);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.structure-legend {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.structure-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 10px;
+  flex-wrap: wrap;
+}
+
+.structure-controls input[type='range'] {
+  flex: 1;
+  min-width: 180px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.structure-round {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  min-width: 190px;
+}
+
+@media (max-width: 720px) {
+  .structure-stage {
+    height: 320px;
+  }
+  .structure-round {
+    min-width: 0;
+  }
+}

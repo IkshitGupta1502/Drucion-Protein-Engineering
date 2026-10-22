@@ -465,7 +465,11 @@ def test_unknown_mode_raises(synthetic_loaded, monkeypatch):
 def test_call_gemini_parses_response(monkeypatch):
     captured = {}
 
-    def fake_urlopen(req, timeout=None):
+    def fake_urlopen(req, timeout=None, context=None):
+        import ssl
+
+        assert context.check_hostname
+        assert context.verify_mode == ssl.CERT_REQUIRED
         captured["url"] = req.full_url
         captured["body"] = json.loads(req.data.decode())
         captured["key"] = req.get_header("X-goog-api-key")

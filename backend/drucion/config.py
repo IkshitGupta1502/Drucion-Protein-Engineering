@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = Path(os.environ.get("DRUCION_DATA_DIR", REPO_ROOT / "data"))
 PROTEINGYM_DIR = DATA_DIR / "proteingym_raw" / "DMS_ProteinGym_substitutions"
 REFERENCE_CSV = DATA_DIR / "proteingym_raw" / "DMS_substitutions.csv"
+STRUCTURES_DIR = DATA_DIR / "structures_raw" / "ProteinGym_AF2_structures"
 CACHE_DIR = Path(os.environ.get("DRUCION_CACHE_DIR", DATA_DIR / "cache"))
 RESULTS_DIR = Path(os.environ.get("DRUCION_RESULTS_DIR", REPO_ROOT / "results"))
 DB_PATH = Path(os.environ.get("DRUCION_DB", DATA_DIR / "drucion.sqlite"))
