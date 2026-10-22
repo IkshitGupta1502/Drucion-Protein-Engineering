@@ -264,6 +264,7 @@ export default function App() {
           <>
             {error && <div className="alert err">{error}</div>}
             <Live
+              budgetEstimate={results?.budget_estimate}
               onSetup={() => navigate('setup')}
               onResults={() => navigate('explorer')}
               experiment={experiment}

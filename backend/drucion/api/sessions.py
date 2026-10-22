@@ -156,7 +156,7 @@ class SessionManager:
                 self.store.update_experiment(
                     exp_id,
                     status="ready",
-                    n_measured=opt.oracle.n_queries,
+                    n_measured=opt.n_measured,
                     best_measured=opt.best_measured,
                     best_mutant=opt.best_mutant,
                 )
@@ -193,12 +193,123 @@ class SessionManager:
                 exp_id,
                 status=status,
                 round=opt.round,
-                n_measured=opt.oracle.n_queries,
+                n_measured=opt.n_measured,
                 best_measured=opt.best_measured,
                 best_mutant=opt.best_mutant,
             )
         payload = record.to_dict()
         session.emit("round", payload)
+        session.emit("status", {"status": session.status})
+        return payload
+
+    # ------------------------------------------------------------------
+    # Prospective ("bring your own bench data") loop
+    # ------------------------------------------------------------------
+
+    def propose(self, exp_id: str) -> dict:
+        """Choose the next batch without measuring it."""
+        session = self._require(exp_id)
+        with session._lock:
+            opt = session.optimizer
+            if opt is None:
+                raise RuntimeError(f"Experiment is {session.status}, not ready")
+            batch = opt.propose()
+            session.status = "awaiting_measurements"
+            self.store.update_experiment(
+                exp_id, status="awaiting_measurements", round=opt.round
+            )
+        payload = batch.to_dict()
+        session.emit("proposed", payload)
+        session.emit("status", {"status": session.status})
+        return payload
+
+    def extend(self, exp_id: str, additional_rounds: int = 1) -> dict:
+        """Add rounds to a run that has used up its planned budget."""
+        session = self._require(exp_id)
+        with session._lock:
+            opt = session.optimizer
+            if opt is None:
+                raise RuntimeError(f"Experiment is {session.status}, not ready")
+            total = opt.extend(additional_rounds)
+            session.status = "paused"
+            self.store.update_experiment(
+                exp_id, status="paused", n_rounds=total
+            )
+        session.emit("status", {"status": session.status})
+        return {"n_rounds": total, "extended_by": opt.extended_by}
+
+    def worklist_csv(self, exp_id: str, prefill: bool = False) -> tuple[str, str]:
+        """Render the pending batch as a CSV worklist.
+
+        ``prefill=True`` fills in the real published ProteinGym measurements
+        for those variants. That exists so the intake path can be exercised
+        end to end without anybody inventing numbers: the values are real, and
+        the sheet says where they came from.
+        """
+        from ..data.proteingym import load_assay_metadata
+        from ..experiments.worklist import batch_token, export_worklist
+
+        session = self._require(exp_id)
+        opt = session.optimizer
+        if opt is None:
+            raise RuntimeError(f"Experiment is {session.status}, not ready")
+        batch = opt.propose()
+        meta = load_assay_metadata(session.config.assay_id)
+
+        prefilled = note = None
+        if prefill:
+            prefilled = opt.oracle.peek_for_evaluation(batch.indices).tolist()
+            note = (
+                "real published DMS measurements for these variants, taken "
+                f"from {meta.source}. Provided so the upload path can be "
+                "tested without inventing numbers; delete this column to "
+                "supply your own results."
+            )
+        text = export_worklist(
+            exp_id, batch, meta, prefilled=prefilled, prefill_note=note or ""
+        )
+        filename = (
+            f"drucion_{session.config.assay_id}_round{batch.round}"
+            f"_{batch_token(exp_id, batch)}"
+            f"{'_prefilled' if prefill else ''}.csv"
+        )
+        return text, filename
+
+    def submit_measurements(self, exp_id: str, text: str) -> dict:
+        """Ingest an uploaded worklist and fold its values into the run."""
+        from ..experiments.worklist import batch_token, parse_measurements
+
+        session = self._require(exp_id)
+        with session._lock:
+            opt = session.optimizer
+            if opt is None:
+                raise RuntimeError(f"Experiment is {session.status}, not ready")
+            batch = opt.propose()
+            result = parse_measurements(
+                text,
+                expected=batch.mutants,
+                expected_token=batch_token(exp_id, batch),
+            )
+            if not result.measurements:
+                return {
+                    "ingested": False,
+                    "round": batch.round,
+                    **result.to_dict(),
+                }
+            record = opt.ingest(result.measurements, source="uploaded")
+            self.store.add_round(exp_id, record.round, record.to_dict())
+            status = "done" if opt.finished else "paused"
+            session.status = status
+            self.store.update_experiment(
+                exp_id,
+                status=status,
+                round=opt.round,
+                n_measured=opt.n_measured,
+                best_measured=opt.best_measured,
+                best_mutant=opt.best_mutant,
+            )
+        payload = {"ingested": True, "round": record.round, **result.to_dict()}
+        session.emit("round", record.to_dict())
         session.emit("status", {"status": session.status})
         return payload
 
@@ -284,7 +395,7 @@ class SessionManager:
         base.update(
             {
                 "round": opt.round,
-                "n_measured": opt.oracle.n_queries,
+                "n_measured": opt.n_measured,
                 "best_measured": opt.best_measured,
                 "best_mutant": opt.best_mutant,
                 "pool_size": len(opt.pool),
@@ -325,6 +436,19 @@ class SessionManager:
             out["wild_type"] = wt
             out["best_sequence"] = best_seq
             out["pool_stats"] = opt.oracle.ground_truth_summary()
+            from ..evaluation.budget import estimate_random_budget
+
+            history = list(opt.history)
+            target = out["best_measured"]
+            first_reached = next((r for r in history if r.best_measured >= target), None)
+            if first_reached is not None:
+                n_initial = history[0].n_measured
+                out["budget_estimate"] = estimate_random_budget(
+                    opt.oracle.all_scores_for_evaluation(),
+                    opt.observed[:n_initial], opt.holdout, target,
+                    first_reached.n_measured, opt.config.loop.batch_size,
+                )
+
             diffs = []
             for pos in opt.pool.mutated_positions(opt.best_index):
                 diffs.append(

@@ -56,6 +56,36 @@ export interface RoundRecord {
   wall_time_s: number;
 }
 
+export interface ProposedVariant {
+  index: number;
+  mutant: string;
+  positions: number[];
+  predicted_fitness: number | null;
+  predicted_uncertainty: number | null;
+  acquisition_score: number;
+}
+
+export interface ProposedBatch {
+  round: number;
+  variants: ProposedVariant[];
+  surrogate_kind: string;
+  holdout_spearman: number | null;
+}
+
+export interface IntakeReport {
+  ingested: boolean;
+  round: number;
+  n_accepted: number;
+  n_skipped: number;
+  n_rejected: number;
+  n_missing: number;
+  accepted: Record<string, number>;
+  skipped: string[];
+  rejected: { row: string; reason: string }[];
+  missing: string[];
+  batch_token: string | null;
+}
+
 export interface ExperimentState {
   id: string;
   status: string;
@@ -89,6 +119,7 @@ export interface ExperimentResults {
   differences: { position: number; wild_type_aa: string; variant_aa: string }[];
   learning_curve?: { n_measured: number[]; best_measured: number[] } | null;
   rounds: RoundRecord[];
+  budget_estimate?: { target_score: number; actual_measurements: number; random_expected_measurements: number; saved_measurements: number; saved_percent: number } | null;
   pool_stats?: Record<string, number> | null;
 }
 
@@ -187,6 +218,45 @@ export const api = {
 
   streamUrl: (id: string) => `${BASE}/api/experiments/${id}/stream`,
   structureUrl: (assayId: string) => `${BASE}/api/assays/${assayId}/structure`,
+
+  /** Choose the next batch without measuring it. */
+  propose: (id: string) =>
+    request<ProposedBatch>(`/api/experiments/${id}/propose`, { method: 'POST' }),
+
+  /** Allow more rounds than the run was originally planned for. */
+  extend: (id: string, additionalRounds = 1) =>
+    request<{ n_rounds: number; extended_by: number }>(
+      `/api/experiments/${id}/extend?additional_rounds=${additionalRounds}`,
+      { method: 'POST' },
+    ),
+
+  /** Download URL for the worklist CSV to take to the bench. */
+  worklistUrl: (id: string, prefill = false) =>
+    `${BASE}/api/experiments/${id}/worklist.csv${prefill ? '?prefill=true' : ''}`,
+
+  /** Upload a filled-in worklist and re-optimize. */
+  submitMeasurements: async (id: string, file: File): Promise<IntakeReport> => {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch(`${BASE}/api/experiments/${id}/measurements`, {
+      method: 'POST',
+      body,
+    });
+    if (!response.ok) {
+      let detail = response.statusText;
+      try {
+        const payload = await response.json();
+        detail =
+          typeof payload.detail === 'string'
+            ? payload.detail
+            : JSON.stringify(payload.detail);
+      } catch {
+        /* keep statusText */
+      }
+      throw new Error(detail || `Upload failed: ${response.status}`);
+    }
+    return response.json() as Promise<IntakeReport>;
+  },
 };
 
 export const METHOD_LABELS: Record<string, string> = {

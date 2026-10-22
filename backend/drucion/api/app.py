@@ -12,7 +12,7 @@ import logging
 import queue
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
@@ -35,6 +35,7 @@ from ..data.structures import (
     has_structure,
     load_structure,
 )
+from ..experiments.worklist import WorklistError
 from .schemas import (
     AssayDetail,
     AssaySummary,
@@ -199,6 +200,94 @@ def step_experiment(exp_id: str) -> dict:
         return manager.step(exp_id)
     except KeyError as exc:
         raise HTTPException(404, f"Unknown experiment: {exp_id}") from exc
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/experiments/{exp_id}/propose", response_model=dict)
+def propose_batch(exp_id: str) -> dict:
+    """Choose the next batch to test, without revealing any measurement.
+
+    This is the first half of a real campaign: Drucion commits to a batch,
+    you take it to the bench, and the values come back through
+    ``/measurements``. Calling it twice returns the same pending batch.
+    """
+    try:
+        return manager.propose(exp_id)
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown experiment: {exp_id}") from exc
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/experiments/{exp_id}/extend", response_model=dict)
+def extend_experiment(exp_id: str, additional_rounds: int = 1) -> dict:
+    """Allow more rounds than the run was originally planned for.
+
+    The fixed round budget exists so benchmark comparisons are fair. A real
+    campaign has no such stopping rule, so extending is explicit and recorded
+    rather than silent.
+    """
+    if not 1 <= additional_rounds <= 100:
+        raise HTTPException(422, "additional_rounds must be between 1 and 100")
+    try:
+        return manager.extend(exp_id, additional_rounds)
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown experiment: {exp_id}") from exc
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get("/api/experiments/{exp_id}/worklist.csv")
+def download_worklist(exp_id: str, prefill: bool = False) -> Response:
+    """Download the pending batch as a CSV worklist to take to the bench.
+
+    ``prefill=true`` returns the sheet already filled in with the **real
+    published measurements** for those variants, so the upload path can be
+    exercised end to end without inventing data. The file states that
+    provenance in its header.
+    """
+    try:
+        text, filename = manager.worklist_csv(exp_id, prefill=prefill)
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown experiment: {exp_id}") from exc
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return Response(
+        content=text,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/api/experiments/{exp_id}/measurements", response_model=dict)
+async def submit_measurements(
+    exp_id: str, file: UploadFile | None = None, request: Request = None
+) -> dict:
+    """Upload measured results for the pending batch and re-optimize.
+
+    Accepts the filled-in worklist either as a multipart file upload or as a
+    raw CSV body. Every row that could not be used is reported back with the
+    reason; nothing is silently dropped. Values arriving here are recorded
+    with ``source="uploaded"`` and are never presented as ProteinGym data.
+    """
+    if file is not None:
+        raw = await file.read()
+    else:
+        raw = await request.body()
+    if not raw:
+        raise HTTPException(422, "No file content received")
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(422, f"File is not valid UTF-8 text: {exc}") from exc
+
+    try:
+        return manager.submit_measurements(exp_id, text)
+    except KeyError as exc:
+        raise HTTPException(404, f"Unknown experiment: {exp_id}") from exc
+    except WorklistError as exc:
+        raise HTTPException(422, str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(409, str(exc)) from exc
 

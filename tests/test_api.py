@@ -202,6 +202,11 @@ class TestExperimentLifecycle:
         body = r.json()
         assert body["wild_type"]
         assert body["best_sequence"]
+        estimate = body["budget_estimate"]
+        assert estimate is not None
+        assert estimate["target_score"] == body["best_measured"]
+        assert estimate["actual_measurements"] <= body["n_measured"]
+        assert estimate["random_expected_measurements"] > 0
         assert len(body["wild_type"]) == len(body["best_sequence"])
         assert body["differences"]
         for d in body["differences"]:

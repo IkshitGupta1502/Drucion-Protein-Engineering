@@ -1,8 +1,12 @@
+import { BudgetEstimate } from '../components/BudgetEstimate';
+import type { ExperimentResults } from '../api';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { METHOD_LABELS, type ExperimentState, type RoundRecord } from '../api';
 import { Plot } from '../components/Plot';
+import { BenchLoop } from '../components/BenchLoop';
 
 interface Props {
+  budgetEstimate?: ExperimentResults['budget_estimate'];
   onSetup: () => void;
   onResults: () => void;
   experiment: ExperimentState | null;
@@ -16,6 +20,7 @@ interface Props {
 }
 
 export function Live({
+  budgetEstimate,
   onSetup,
   onResults,
   experiment,
@@ -99,6 +104,7 @@ export function Live({
       )}
 
       <StatRow experiment={experiment} latest={latest} />
+      <BudgetEstimate estimate={budgetEstimate} />
 
       <div className="grid chart-grid">
         <div className="card">
@@ -172,6 +178,7 @@ export function Live({
 
       <div className="plain-explanation"><strong>How to read your progress</strong><p>A higher measured score means better performance in this dataset. The first chart tracks your best result so far. The second checks how well the model ranks variants it hasn’t learned from; closer to 1 is better. Neither chart guarantees the next batch will improve.</p></div>
       <RoundPanel rounds={rounds} />
+      <BenchLoop experiment={experiment} />
     </div>
   );
 }

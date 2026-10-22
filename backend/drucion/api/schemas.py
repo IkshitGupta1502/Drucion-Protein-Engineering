@@ -100,6 +100,10 @@ class RoundOut(BaseModel):
     holdout_spearman: float | None = None
     holdout_rmse: float | None = None
     proposal_report: dict[str, Any] | None = None
+    #: "proteingym" for the retrospective oracle, "uploaded" for values
+    #: returned from a bench. Never mixed.
+    measurement_source: str = "proteingym"
+    n_unmeasured: int = 0
     wall_time_s: float = 0.0
 
 
@@ -138,6 +142,7 @@ class ExperimentResults(BaseModel):
     learning_curve: dict[str, list[float]] | None = None
     rounds: list[RoundOut] = []
     pool_stats: dict[str, float] | None = None
+    budget_estimate: dict[str, float] | None = None
 
 
 class BenchmarkRequest(BaseModel):
