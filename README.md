@@ -126,6 +126,86 @@ worse here". The same TPMT runs do show greedy degrading its own model hardest
 pulling it back toward exploration when the model is uninformative, which is
 the behaviour it exists to provide.
 
+### An LLM structural prior improves the model but not the outcome
+
+A fourth, label-free feature was added: an LLM is shown the wild-type sequence
+and the kind of assay, and asked which residue positions are functionally
+critical and which substitution classes are tolerated. Its answer is converted
+to one scalar per variant by local arithmetic and appended as a feature column,
+exactly as the ESM-2 zero-shot score already is. One model call per assay, not
+per variant. The prompt withholds the protein's identity by default, so the
+model reasons from sequence and assay type rather than recalling a published
+result.
+
+On TPMT the prior clearly improves the **representation**:
+
+| Representation | Held-out ρ |
+|---|---|
+| `esm2` | 0.300 ± 0.025 |
+| `esm2 + zero_shot` (the configuration the benchmark uses) | 0.355 ± 0.041 |
+| **`+ LLM prior, blind`** | **0.412 ± 0.016** |
+| `+ LLM prior, told the protein` | 0.424 ± 0.013 |
+| control: shuffled prior scores | 0.311 ± 0.055 |
+| control: random critical positions | 0.353 ± 0.026 |
+
+![Agent prior representation check](results/TPMT_HUMAN_Matreyek_2018_agent_prior.png)
+
+The two controls are what make that readable. Permuting the prior's scores
+across variants — same distribution, no per-variant information — lands *below*
+baseline, so the gain is not an artefact of adding a column. Reassigning the
+same number of critical positions at random also lands at baseline, so it is
+not "any sparse positional prior helps". And the blind prior recovers 94% of
+the named prior's gain, which is the control that matters most here: ProteinGym
+assays are published, and a prior that worked only when told the protein's name
+would be recall rather than reasoning.
+
+**It does not convert into better optimization.** Running the full benchmark
+with the blind prior enabled (10 seeds, identical budget):
+
+| Method | Top-1% found, baseline | with prior | Final ρ, baseline | with prior |
+|---|---|---|---|---|
+| Random selection | 4.1% | 4.1% | 0.350 | 0.393 |
+| ESM-guided evolutionary | 4.6% | 4.6% | 0.357 | 0.388 |
+| Greedy surrogate | 3.0% | 4.9% | 0.253 | 0.337 |
+| Bayesian AL (EI) | 4.1% | 4.6% | 0.341 | 0.384 |
+| Bayesian AL (UCB) | 2.7% | 4.3% | 0.277 | 0.359 |
+
+![Agent prior benchmark comparison](results/TPMT_HUMAN_Matreyek_2018_agentprior_comparison.png)
+
+Every method's surrogate improves, and no method ends up meaningfully ahead of
+random's 4.1%. Normalised AUC is flat (0.505 random vs 0.492 UCB). The
+enrichment on TPMT stays at roughly 1.1×.
+
+Two things follow, and the second is the more important one.
+
+**The prior is a floor, not a lift.** Greedy and UCB had been *below* random
+(3.0% and 2.7%) because exploitative selection degrades its own training set.
+With the prior they recover to approximately random. That is a real effect —
+the prior supplies information the biased training set cannot — but "stops the
+model collapsing" is a weaker claim than "finds more top variants", and only
+the first is supported.
+
+**It is evidence against reading the surrogate-quality relationship as a
+lever.** The monotone ρ-to-enrichment relationship above was measured *across*
+assays, over a ρ span of 0.350–0.561. Extrapolating it predicted that lifting
+TPMT's ρ to ~0.41 would raise enrichment toward 2.5×. That prediction was made
+in advance and **it failed**. Raising ρ within an assay did not move enrichment
+there. Either ρ ≈ 0.39 is still below whatever threshold makes guided selection
+pay on this assay, or whole-pool rank correlation is simply the wrong statistic
+to predict top-tail enrichment — a prior that mostly identifies which variants
+are *bad* need not sharpen discrimination among the good ones. These runs
+cannot separate those two explanations, and only TPMT was tested.
+
+Enabling it requires a Gemini API key in `.env` (see `.env.example`); it is off
+by default and nothing above it changes when it is off:
+
+```bash
+python scripts/representation_check.py --assay TPMT_HUMAN_Matreyek_2018 \
+    --featurizers esm2 --agent-prior --save
+python scripts/run_benchmark.py --assay TPMT_HUMAN_Matreyek_2018 \
+    --seeds 10 --agent-prior --tag agentprior
+```
+
 ## Quickstart
 
 Requires Python 3.11+ and Node 18+. CPU-only works; CUDA and Apple MPS are used
@@ -421,6 +501,12 @@ would be an optional extension, not a dependency.
 - **No universal winner.** UCB is best on VIM-2, the evolutionary baseline on
   TEM-1 and TPMT. At 10 seeds we do not claim a best method.
 - **No structure.** 3D visualisation and structure-aware features are unbuilt.
+- **The LLM prior is tested on one assay.** Its +0.057 ρ on TPMT comes from a
+  single prior draw at temperature 0 on a single assay, scored over 3 seeds.
+  VIM-2 and TEM-1 have not been run. The benchmark result that follows from it
+  is likewise TPMT-only, and TPMT is the assay where ESM-2 is weakest — the
+  case with the most room for an outside prior to help, so the gain should be
+  read as an upper bound rather than a typical value.
 
 ## What is not finished
 
@@ -429,3 +515,7 @@ would be an optional extension, not a dependency.
 - Larger ESM-2 checkpoints are configurable but have not been benchmarked.
 - The benchmark runs methods sequentially; parallelising across seeds would cut
   wall time roughly fivefold.
+- The LLM structural prior has not been replicated on VIM-2 or TEM-1, and the
+  prior is used only as an extra feature column. The two stronger attachment
+  points — as the GP's prior mean, or as per-position kernel lengthscales —
+  are unimplemented. See `HANDOFF.md`.

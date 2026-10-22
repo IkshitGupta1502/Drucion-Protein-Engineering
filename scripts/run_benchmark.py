@@ -27,6 +27,16 @@ def main() -> int:
     p.add_argument("--pool-size", type=int, default=None)
     p.add_argument("--surrogate", default="gp", choices=["gp", "rf"])
     p.add_argument("--featurizer", default="esm2")
+    p.add_argument(
+        "--agent-prior",
+        action="store_true",
+        help="append the LLM structural prior feature (needs a Gemini key)",
+    )
+    p.add_argument(
+        "--agent-prior-named",
+        action="store_true",
+        help="tell the model which protein it is (default is blind)",
+    )
     p.add_argument("--tag", default="")
     p.add_argument("--no-plots", action="store_true")
     args = p.parse_args()
@@ -39,6 +49,8 @@ def main() -> int:
     cfg.loop.n_rounds = args.rounds
     cfg.surrogate.kind = args.surrogate
     cfg.embedding.featurizer = args.featurizer
+    cfg.embedding.include_agent_prior = args.agent_prior
+    cfg.embedding.agent_prior_blind = not args.agent_prior_named
 
     print(
         f"Assay={cfg.assay_id} budget={cfg.total_budget} "
@@ -73,7 +85,7 @@ def main() -> int:
             print(" -", n)
 
     if not args.no_plots:
-        figs = plot_benchmark(result)
+        figs = plot_benchmark(result, tag=args.tag)
         for f in figs:
             print("plot:", f)
     for k, v in paths.items():

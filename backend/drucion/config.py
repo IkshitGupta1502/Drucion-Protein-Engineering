@@ -18,6 +18,9 @@ REFERENCE_CSV = DATA_DIR / "proteingym_raw" / "DMS_substitutions.csv"
 CACHE_DIR = Path(os.environ.get("DRUCION_CACHE_DIR", DATA_DIR / "cache"))
 RESULTS_DIR = Path(os.environ.get("DRUCION_RESULTS_DIR", REPO_ROOT / "results"))
 DB_PATH = Path(os.environ.get("DRUCION_DB", DATA_DIR / "drucion.sqlite"))
+#: Optional ``KEY=value`` file for API credentials, read as a fallback when the
+#: environment does not already define them. Gitignored.
+ENV_FILE = Path(os.environ.get("DRUCION_ENV_FILE", REPO_ROOT / ".env"))
 
 AcquisitionName = Literal["random", "greedy", "ucb", "ei", "evolutionary"]
 
@@ -54,6 +57,25 @@ class EmbeddingConfig:
     #: Label-free, and measurably improves surrogate accuracy (see
     #: results/representation_check.json).
     include_zero_shot: bool = True
+    #: Append an LLM-proposed structural prior as a further feature column.
+    #: Same category of input as the zero-shot score: label-free, derived from
+    #: pretrained knowledge, one scalar per variant. Off by default because it
+    #: needs a Gemini API key; see embeddings/agent_prior.py.
+    include_agent_prior: bool = False
+    agent_prior_model: str = "gemini-3.8-flash"
+    #: Withhold the protein's identity from the prompt, leaving only sequence
+    #: and assay type. ProteinGym assays are published, so a prior that only
+    #: works non-blind is recall rather than reasoning. Defaults to True: on
+    #: TPMT the blind prior recovers 0.412 held-out rho against the named
+    #: prior's 0.424, so withholding the identity costs almost nothing and
+    #: removes the memorisation confound entirely. See
+    #: results/representation_check_agent.json.
+    agent_prior_blind: bool = True
+    #: "agent" uses the prior as returned; "shuffled" permutes its scores
+    #: across variants (same distribution, no information) and
+    #: "random_positions" reassigns its tolerance labels to random positions.
+    #: The latter two are the controls that make a gain interpretable.
+    agent_prior_mode: Literal["agent", "shuffled", "random_positions"] = "agent"
 
 
 @dataclass

@@ -52,6 +52,15 @@ def main() -> int:
         "--featurizers", nargs="+", default=["esm2", "esm2_mean", "onehot"]
     )
     p.add_argument(
+        "--agent-prior",
+        action="store_true",
+        help=(
+            "also evaluate the LLM structural prior on top of esm2+zero_shot, "
+            "with its shuffled, random-position and blind controls"
+        ),
+    )
+    p.add_argument("--agent-model", default="gemini-3.8-flash")
+    p.add_argument(
         "--save", action="store_true", help="write results/representation_check.json"
     )
     args = p.parse_args()
@@ -70,13 +79,57 @@ def main() -> int:
                 n_components=args.components,
                 include_zero_shot=with_zs,
             )
-            fs = build_features(assay.pool, cfg)
+            fs = build_features(assay.pool, cfg, metadata=assay.metadata)
             results[key] = evaluate(fs.X, y, args.n_train) | {
                 "raw_dim": fs.raw_dim,
                 "n_features": int(fs.X.shape[1]),
                 "explained_variance": round(fs.explained_variance_ratio, 3),
             }
             print(key, json.dumps(results[key]), flush=True)
+
+    if args.agent_prior:
+        # The agent prior is evaluated on top of the configuration the
+        # benchmark actually uses (esm2 + zero-shot), because the question is
+        # whether it adds anything *beyond* the prior already in place. The
+        # three controls sit alongside it: "shuffled" has the same score
+        # distribution but no information, "random_positions" is any sparse
+        # positional prior rather than this one, and "blind" withholds the
+        # protein's identity to separate reasoning from recall.
+        variants = [
+            ("esm2+zero_shot+agent", {"mode": "agent", "blind": False}),
+            ("esm2+zero_shot+agent_shuffled", {"mode": "shuffled", "blind": False}),
+            (
+                "esm2+zero_shot+agent_random_positions",
+                {"mode": "random_positions", "blind": False},
+            ),
+            ("esm2+zero_shot+agent_blind", {"mode": "agent", "blind": True}),
+        ]
+        for key, opts in variants:
+            cfg = EmbeddingConfig(
+                featurizer="esm2",
+                n_components=args.components,
+                include_zero_shot=True,
+                include_agent_prior=True,
+                agent_prior_model=args.agent_model,
+                agent_prior_mode=opts["mode"],
+                agent_prior_blind=opts["blind"],
+            )
+            try:
+                fs = build_features(assay.pool, cfg, metadata=assay.metadata)
+            except Exception as exc:  # noqa: BLE001 - reported, not swallowed
+                results[key] = {"error": f"{type(exc).__name__}: {exc}"}
+                print(key, "FAILED:", exc, flush=True)
+                continue
+            row = evaluate(fs.X, y, args.n_train) | {
+                "raw_dim": fs.raw_dim,
+                "n_features": int(fs.X.shape[1]),
+                "explained_variance": round(fs.explained_variance_ratio, 3),
+            }
+            if fs.agent_prior_info:
+                row["agent_prior"] = fs.agent_prior_info
+            results[key] = row
+            print(key, json.dumps({k: v for k, v in row.items()
+                                   if k != "agent_prior"}), flush=True)
 
     payload = {
         "assay": args.assay,
@@ -94,7 +147,15 @@ def main() -> int:
     print(json.dumps(payload, indent=2))
 
     if args.save:
-        out = RESULTS_DIR / "representation_check.json"
+        # The agent-prior run is written to its own file so it does not
+        # overwrite the original representation table, which carries the
+        # esm2_mean and onehot rows this run does not recompute.
+        name = (
+            "representation_check_agent.json"
+            if args.agent_prior
+            else "representation_check.json"
+        )
+        out = RESULTS_DIR / name
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, indent=2))
         print(f"saved: {out}")

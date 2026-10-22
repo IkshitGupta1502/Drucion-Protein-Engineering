@@ -14,3 +14,6 @@ data/*.sqlite*
 *.tsbuildinfo
 results/api/
 .claude/settings.local.json
+
+# API credentials (see .env.example)
+.env

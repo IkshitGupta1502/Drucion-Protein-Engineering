@@ -69,24 +69,47 @@ class FeatureSet:
     #: ESM-2 masked-marginal zero-shot scores, kept for the evolutionary
     #: baseline and for the UI. ``None`` when not computed.
     zero_shot: np.ndarray | None = None
+    includes_agent_prior: bool = False
+    #: LLM-proposed structural prior scores, kept for the UI. ``None`` when
+    #: not computed.
+    agent_prior: np.ndarray | None = None
+    #: Validation counts and claims from the prior, for reporting. The
+    #: ``wt_match_rate`` entry is the guard against numbering drift.
+    agent_prior_info: dict | None = None
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "featurizer": self.featurizer,
             "raw_dim": self.raw_dim,
             "n_components": self.n_components,
             "n_features": int(self.X.shape[1]),
             "explained_variance_ratio": round(self.explained_variance_ratio, 4),
             "includes_zero_shot": self.includes_zero_shot,
+            "includes_agent_prior": self.includes_agent_prior,
         }
+        if self.agent_prior_info:
+            d["agent_prior"] = self.agent_prior_info
+        return d
+
+
+def _standardise(v: np.ndarray) -> np.ndarray:
+    """Centre and unit-scale a prior column, leaving a constant column at zero."""
+    v = np.asarray(v, dtype=np.float64) - float(np.mean(v))
+    std = float(v.std())
+    return v / std if std > 1e-12 else v
 
 
 def build_features(
     pool: CandidatePool,
     config: EmbeddingConfig | None = None,
     progress=None,
+    metadata=None,
 ) -> FeatureSet:
-    """Compute and PCA-reduce features for every variant in ``pool``."""
+    """Compute and PCA-reduce features for every variant in ``pool``.
+
+    ``metadata`` is only needed when ``config.include_agent_prior`` is set, as
+    the LLM prior is prompted from the assay's label-free metadata.
+    """
     config = config or EmbeddingConfig()
 
     if config.featurizer in ("esm2", "esm2_mean"):
@@ -126,6 +149,10 @@ def build_features(
     if global_scale > 1e-12:
         X = X / global_scale
 
+    # Scale of the PCA block, captured before any prior column is appended so
+    # that every appended column is scaled against the same reference.
+    block_scale = float(X.std())
+
     zero_shot = None
     if config.include_zero_shot:
         from .esm import ESM2Embedder
@@ -136,13 +163,31 @@ def build_features(
             batch_size=config.batch_size,
         )
         zero_shot = embedder.masked_marginal_scores(pool.wild_type, pool.mutants)
-        zs = zero_shot - zero_shot.mean()
-        zs_std = float(zs.std())
-        if zs_std > 1e-12:
-            zs = zs / zs_std
+        zs = _standardise(zero_shot)
         # Put the zero-shot column on the same scale as the PCA block so the
         # GP's ARD kernel starts out treating it comparably.
-        X = np.hstack([X, (zs * X.std()).reshape(-1, 1)])
+        X = np.hstack([X, (zs * block_scale).reshape(-1, 1)])
+
+    agent_prior = None
+    agent_prior_info = None
+    if config.include_agent_prior:
+        if metadata is None:
+            raise ValueError(
+                "include_agent_prior requires `metadata`; pass the assay's "
+                "AssayMetadata to build_features()."
+            )
+        from .agent_prior import agent_prior_scores
+
+        agent_prior, prior = agent_prior_scores(
+            metadata,
+            pool,
+            model=config.agent_prior_model,
+            blind=config.agent_prior_blind,
+            mode=config.agent_prior_mode,
+        )
+        agent_prior_info = prior.to_dict() | {"mode": config.agent_prior_mode}
+        ap = _standardise(agent_prior)
+        X = np.hstack([X, (ap * block_scale).reshape(-1, 1)])
 
     return FeatureSet(
         X=np.ascontiguousarray(X, dtype=np.float64),
@@ -152,4 +197,7 @@ def build_features(
         explained_variance_ratio=float(pca.explained_variance_ratio_.sum()),
         includes_zero_shot=config.include_zero_shot,
         zero_shot=zero_shot,
+        includes_agent_prior=config.include_agent_prior,
+        agent_prior=agent_prior,
+        agent_prior_info=agent_prior_info,
     )
