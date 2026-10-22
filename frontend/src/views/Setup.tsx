@@ -61,7 +61,7 @@ export function Setup({ spec, onChange, onStart, onPreview, starting, active, on
             <li><span>2</span><div><h3>Watch the search learn</h3><p>Drucion starts with a small sample, picks promising variants, and checks their results.</p></div></li>
             <li><span>3</span><div><h3>See what you found</h3><p>Get the best variant found, its measured score, and a clear view of your progress.</p></div></li>
           </ol>
-          <div className="demo-explainer"><strong>Try it with real results, without a lab.</strong><p>This demo reveals published protein measurements as it runs. It uses no lab equipment and does not spend money or perform new experiments.</p></div>
+          <div className="demo-explainer"><strong>Try it with real results without a lab</strong><p>This demo reveals published protein measurements as it runs. It uses no lab equipment and does not spend money or perform new experiments.</p></div>
           <button className="text-button" onClick={onPreview}>Just looking? Explore example results →</button>
         </section>
         <section className="card start-card" aria-labelledby="start-title">

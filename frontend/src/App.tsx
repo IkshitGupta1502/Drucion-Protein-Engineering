@@ -239,13 +239,13 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-note"><span className="eyebrow">THE EXPERIMENT LOOP</span><p>Predict. Measure.<br/>Learn. Repeat.</p><span>Find better variants with a focused measurement budget.</span></div>
+        <div className="sidebar-note"><span className="eyebrow">MAKE EACH EXPERIMENT COUNT</span><p>Find your next<br/>promising candidate</p><span>Use what you’ve learned to decide what to test next.</span></div>
         <div className="sidebar-footer"><span className={`status-dot ${device ? 'online' : ''}`} />{device ? 'Ready to explore' : engineError ? 'Server unavailable' : 'Connecting…'}<small>Demo · Published protein data</small></div>
       </aside>
       <div className="workspace">
         <header className="topbar"><span>Your workspace <span className="breadcrumb-divider">/</span> <strong>{TABS.find(t => t.id === tab)?.label}</strong></span><span className="environment-label">DEMO WORKSPACE</span></header>
         <main className="main" id="main-content" tabIndex={-1}>
-          <div className="page-heading"><div><div className="eyebrow">{tab === 'setup' ? 'YOUR NEXT DISCOVERY STARTS HERE' : 'YOUR DISCOVERY WORKSPACE'}</div><h1>{tab === 'setup' ? 'Find better protein variants.' : tab === 'live' ? 'Your search, explained.' : tab === 'benchmark' ? 'See how each approach performs.' : 'Meet your best candidates.'}</h1><p>{tab === 'setup' ? 'Choose a starting point. Let Drucion guide the search.' : tab === 'live' ? 'Follow what’s happening, what we’ve learned, and what comes next.' : tab === 'benchmark' ? 'Explore saved examples to understand when guided search helps.' : 'See what your search found and inspect the results behind it.'}</p></div><span className="page-index">0{TABS.findIndex(t => t.id === tab) + 1} / 04</span></div>
+          <div className="page-heading"><div><div className="eyebrow">{tab === 'setup' ? 'YOUR NEXT DISCOVERY STARTS HERE' : tab === 'live' ? 'MY SEARCH' : 'YOUR WORKSPACE'}</div><h1>{tab === 'setup' ? 'Find better protein variants' : tab === 'live' ? 'Search explanations' : tab === 'benchmark' ? 'See how each approach performs.' : 'Meet your best candidates.'}</h1><p>{tab === 'setup' ? 'Choose a starting point. Let Drucion guide the search.' : tab === 'live' ? 'Follow what’s happening, what we’ve learned, and what comes next.' : tab === 'benchmark' ? 'Explore saved examples to understand when guided search helps.' : 'See what your search found and inspect the results behind it.'}</p></div><span className="page-index">0{TABS.findIndex(t => t.id === tab) + 1} / 04</span></div>
           <Suspense fallback={<div className="empty" role="status"><span className="spinner" /> Loading workspace…</div>}>
         {restoring && <div className="alert info" role="status">Restoring your last search…</div>}
         {tab === 'setup' && (

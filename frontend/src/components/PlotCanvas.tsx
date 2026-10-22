@@ -43,5 +43,13 @@ export function Plot({ data, layout, height = 380 }: Props) {
     };
   }, [data, layout, height]);
 
-  return <div ref={ref} className="plot" />;
+  const resetZoom = () => {
+    if (!ref.current) return;
+    Plotly.relayout(ref.current, {
+      xaxis: { ...PLOT_LAYOUT.xaxis, ...layout?.xaxis, autorange: !layout?.xaxis?.range },
+      yaxis: { ...PLOT_LAYOUT.yaxis, ...layout?.yaxis, autorange: !layout?.yaxis?.range },
+    });
+  };
+
+  return <div><div style={{ display: 'flex', justifyContent: 'flex-end' }}><button type="button" className="btn" onClick={resetZoom}>Reset zoom</button></div><div ref={ref} className="plot" /></div>;
 }
