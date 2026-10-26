@@ -278,27 +278,6 @@ results/               # benchmark CSV/JSON/PNG (committed)
 
 ---
 
-## Limitations
-
-- **Retrospective, not prospective.** Drucion selects from variants already
-  assayed; it does not predict fitness for genuinely novel sequences.
-- **Single substitutions only** by default; epistasis is not exercised, though
-  multi-mutant assays load fine (`singles_only=False`).
-- **The small ESM-2.** The 8M checkpoint was chosen so the demo runs on a
-  laptop. Larger checkpoints would likely raise surrogate accuracy and, per the
-  mechanism above, the size of the win.
-- **Ten seeds** — enough for the paired tests reported, not for small
-  differences in the max statistic.
-- **No universal winner.** Three assays. UCB is best on VIM-2, the evolutionary
-  baseline on TEM-1 and TPMT. Three points show the surrogate-quality
-  relationship is monotone; they are not enough to fit it.
-- **Structure is for orientation, not prediction.** The 3D view places real
-  measurements on the wild-type AlphaFold2 model; nothing predicts structural
-  consequence, and the backbone deliberately never morphs.
-- **The LLM prior is tested on one assay** — a single draw on TPMT, where ESM-2
-  is weakest and an outside prior has the most room to help. Read +0.057 ρ as
-  an upper bound, not a typical value.
-
 ## Attribution
 
 **ProteinGym** (Notin et al., NeurIPS 2023 D&B) — MIT. Primary assays: Chen et
