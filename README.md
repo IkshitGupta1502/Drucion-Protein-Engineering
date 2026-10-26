@@ -134,7 +134,7 @@ Requires Python 3.11+ and Node 18+. CPU-only works; CUDA and Apple MPS are used
 automatically when present.
 
 ```bash
-git clone https://github.com/IkshitGupta1502/drucion.git && cd drucion
+git clone https://github.com/IkshitGupta1502/drucion-protein-engineering.git && cd drucion-protein-engineering
 python3.11 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/python scripts/download_data.py
